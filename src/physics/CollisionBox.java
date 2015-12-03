@@ -13,8 +13,10 @@ public class CollisionBox {
 	private Color color;
 	private boolean hitbox;
 	private int damage;
-	
-	public CollisionBox(String name, Color color, int x, int y, int width, int height, float angle, boolean hitbox, int damage) {
+	private Vector trajectory;
+
+	public CollisionBox(String name, Color color, int x, int y, int width, int height, float angle, boolean hitbox,
+			int damage, Vector trajectory) {
 		this.name = name;
 		this.x = x;
 		this.y = y;
@@ -24,16 +26,18 @@ public class CollisionBox {
 		this.color = color;
 		this.hitbox = hitbox;
 		this.damage = damage;
+		this.trajectory = trajectory;
 	}
 	
 	public void draw(int offX, int offY, Graphics g) {
 		 Graphics2D g2d = (Graphics2D) g;
 		 Rectangle r = new Rectangle(x, y, width, height);
-		 g2d.rotate(Math.toRadians(angle));
+		 g2d.rotate(Math.toRadians(angle), x, y);
 		 g2d.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 200));
 		 g2d.draw(r);
 		 g2d.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 100));
 		 g2d.fill(r);
+		 g2d.rotate(Math.toRadians(-angle), x, y);
 	}
 	
 	public Color getColor() {
@@ -72,6 +76,10 @@ public class CollisionBox {
 		return damage;
 	}
 	
+	public Vector getTrajectory() {
+		return trajectory;
+	}
+	
 	public void setColor(Color color) {
 		this.color = color;
 	}
@@ -106,5 +114,9 @@ public class CollisionBox {
 	
 	public void setDamage(int dmg) {
 		damage = dmg;
+	}
+	
+	public void setTrajectory(Vector v) {
+		trajectory = v;
 	}
 }

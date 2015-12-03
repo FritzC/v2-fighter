@@ -13,6 +13,7 @@ import java.util.List;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
+import javax.swing.JColorChooser;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JList;
@@ -24,6 +25,8 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
@@ -32,6 +35,7 @@ import display.Sprite;
 import display.Window;
 import physics.CollisionAreas;
 import physics.CollisionBox;
+import physics.Vector;
 
 public class AnimationEditor {
 	
@@ -64,16 +68,19 @@ public class AnimationEditor {
 	static DefaultListModel<CollisionBox> boxModel;
 	static JButton addBox;
 	static JButton deleteBox;
-	static JSpinner rotation;
+	static JSlider rotation;
 	static JTextField boxName;
-	static JSpinner boxX;
-	static JSpinner boxY;
-	static JSpinner boxW;
-	static JSpinner boxH;
+	static JSlider boxX;
+	static JSlider boxY;
+	static JSlider boxW;
+	static JSlider boxH;
 	static JButton color;
 	static JCheckBox hitbox;
 	static JSpinner damage;
 	static JFileChooser imagePicker;
+	static Color currColor;
+	static JSpinner trajectoryX;
+	static JSpinner trajectoryY;
 	
 	
 	public static void main(String args[]) {
@@ -81,7 +88,6 @@ public class AnimationEditor {
 		frame.getContentPane().setLayout(new GridLayout(1, 4));
 		
 		animsPanel = new JPanel(new BorderLayout());
-		//animsPanel.setPreferredSize(new Dimension(150, 300));
 		animModel = new DefaultListModel<>();
 		anims = new JList<>(animModel);
 		anims.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
@@ -105,6 +111,9 @@ public class AnimationEditor {
 		addAnim.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				String name = JOptionPane.showInputDialog(frame, "Name of animation");
+				if (name == null) {
+					return;
+				}
 				animModel.addElement(new Animation(name, false, new ArrayList<AnimationStep>()));
 				anims.setSelectedIndex(animModel.size() - 1);
 				selectAnim(anims.getSelectedValue());
@@ -121,6 +130,14 @@ public class AnimationEditor {
 		});
 		p.add(deleteAnim);
 		name = new JTextField("Name");
+		name.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!anims.isSelectionEmpty()) {
+					anims.getSelectedValue().setString(name.getText());
+					anims.repaint();
+				}
+			}
+		});
 		p.add(name);
 		repeat = new JCheckBox("Repeat");
 		repeat.addActionListener(new ActionListener() {
@@ -229,6 +246,13 @@ public class AnimationEditor {
 		p2.add(specialCancelable);
 		frameCount = new JSpinner(new SpinnerNumberModel(Animation.FRAMES_PER_SPRITE, 1, 6000, 1));
 		frameCount.setToolTipText("Frames this step lasts");
+		frameCount.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					steps.getSelectedValue().setFramesToDisplay((int) frameCount.getValue()); 
+				}
+			}
+		});
 		p2.add(frameCount);
 		stepPanel.add(p2, BorderLayout.SOUTH);
 		frame.getContentPane().add(stepPanel);
@@ -260,10 +284,16 @@ public class AnimationEditor {
 					JOptionPane.showMessageDialog(frame, "You need to select an animation step first!");
 					return;
 				}
+				String name = JOptionPane.showInputDialog(frame, "Name of hitbox");
+				if (name == null) {
+					return;
+				}
+				Double f1 = (Double) trajectoryX.getValue();
+				Double f2 = (Double) trajectoryY.getValue();
 				steps.getSelectedValue().getCollisions().getBoxes()
-						.add(new CollisionBox("" + (boxModel.size() + 1), Color.YELLOW, (int) boxX.getValue(),
-								(int) boxY.getValue(), (int) boxW.getValue(), (int) rotation.getValue(), 0,
-								hitbox.isSelected(), (int) damage.getValue()));
+						.add(new CollisionBox(name, Color.YELLOW, boxX.getValue(),
+								boxY.getValue(), boxW.getValue(), boxH.getValue(),
+								rotation.getValue(), false, (int) damage.getValue(), new Vector(f1.floatValue(), f2.floatValue())));
 				boxModel.addElement(steps.getSelectedValue().getCollisions().getBoxes()
 						.get(steps.getSelectedValue().getCollisions().getBoxes().size() - 1));
 				cBoxes.setSelectedIndex(boxModel.size() - 1);
@@ -272,32 +302,121 @@ public class AnimationEditor {
 		});
 		j3.add(addBox);
 		deleteBox = new JButton("-");
-		addBox.setToolTipText("Delete collision box");
+		deleteBox.setToolTipText("Delete collision box");
+		deleteBox.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					anims.getSelectedValue().getSteps().get(steps.getSelectedIndex()).getCollisions().getBoxes()
+							.remove(cBoxes.getSelectedIndex());
+					boxModel.remove(cBoxes.getSelectedIndex());
+					resetBoxVals();
+				}
+			}
+		});
 		j3.add(deleteBox);
-		boxX = new JSpinner(new SpinnerNumberModel(50, 0, 1000, 1));
-		boxX.setToolTipText("X Location");
-		j3.add(boxX);
-		boxY = new JSpinner(new SpinnerNumberModel(50, 0, 1000, 1));
-		boxY.setToolTipText("Y Location");
-		j3.add(boxY);
-		boxW = new JSpinner(new SpinnerNumberModel(75, 0, 1000, 1));
-		boxW.setToolTipText("Width");
-		j3.add(boxW);
-		boxH = new JSpinner(new SpinnerNumberModel(25, 0, 1000, 1));
-		boxH.setToolTipText("Height");
-		j3.add(boxH);
-		rotation = new JSpinner(new SpinnerNumberModel(0, 0, 359, 1));
-		rotation.setToolTipText("Rotation (degrees)");
-		j3.add(rotation);
+		/*hitbox = new JCheckBox("Hitbox");
+		hitbox.setToolTipText("Hitbox or Hurtbox");
+		j3.add(hitbox);*/
+		boxName = new JTextField("Name");
+		boxName.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					cBoxes.getSelectedValue().setName(boxName.getText());
+					cBoxes.repaint();
+				}
+			}
+		});
+		j3.add(boxName);
 		color = new JButton("Color");
 		color.setToolTipText("Color of box");
+		color.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					Color newColor = JColorChooser.showDialog(
+		                     frame, "Choose Color", currColor);
+					if (newColor != null) {
+						currColor = newColor;
+						cBoxes.getSelectedValue().setColor(currColor);
+					}
+				}
+			}
+		});
 		j3.add(color);
-		hitbox = new JCheckBox("Hitbox");
-		hitbox.setToolTipText("Hitbox or Hurtbox");
-		j3.add(hitbox);
-		damage = new JSpinner(new SpinnerNumberModel(1, 0, 1000, 1));
+		boxX = new JSlider(0, 400, 110); //new JSpinner(new SpinnerNumberModel(50, 0, 1000, 1));
+		boxX.setToolTipText("X Location");
+		boxX.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					cBoxes.getSelectedValue().setX(boxX.getValue()); 
+				}
+			}
+		});
+		j3.add(boxX);
+		boxY = new JSlider(0, 400, 85); //new JSpinner(new SpinnerNumberModel(50, 0, 1000, 1));
+		boxY.setToolTipText("Y Location");
+		boxY.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					cBoxes.getSelectedValue().setY(boxY.getValue()); 
+				}
+			}
+		});
+		j3.add(boxY);
+		boxW = new JSlider(0, 400, 60); //new JSpinner(new SpinnerNumberModel(75, 0, 1000, 1));
+		boxW.setToolTipText("Width");
+		boxW.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					cBoxes.getSelectedValue().setWidth(boxW.getValue()); 
+				}
+			}
+		});
+		j3.add(boxW);
+		boxH = new JSlider(0, 400, 25); //new JSpinner(new SpinnerNumberModel(25, 0, 1000, 1));
+		boxH.setToolTipText("Height");
+		boxH.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					cBoxes.getSelectedValue().setHeight(boxH.getValue()); 
+				}
+			}
+		});
+		j3.add(boxH);
+		rotation = new JSlider(0, 360, 0);//(new SpinnerNumberModel(0, 0, 359, 1));
+		rotation.setToolTipText("Rotation (degrees)");
+		rotation.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					cBoxes.getSelectedValue().setAngle(rotation.getValue()); 
+				}
+			}
+		});
+		j3.add(rotation);
+		damage = new JSpinner(new SpinnerNumberModel(-1, -1, 1000, 1));
 		damage.setToolTipText("Damage hitbox does");
 		j3.add(damage);
+		trajectoryX = new JSpinner(new SpinnerNumberModel(0, -25, 25, 0.25));
+		trajectoryX.setToolTipText("Trajectory (X Component)");
+		trajectoryX.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					Double f = (Double) trajectoryX.getValue();
+					cBoxes.getSelectedValue().getTrajectory().setX(f.floatValue()); 
+				}
+			}
+		});
+		j3.add(trajectoryX);
+		trajectoryY = new JSpinner(new SpinnerNumberModel(0, -25, 25, 0.25));
+		trajectoryY.setToolTipText("Trajectory (Y Component)");
+		trajectoryY.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					Double f = (Double) trajectoryY.getValue();
+					cBoxes.getSelectedValue().getTrajectory().setY(f.floatValue()); 
+				}
+			}
+		});
+		j3.add(trajectoryY);
 		cBoxesPanel.add(j3, BorderLayout.SOUTH);
 		frame.getContentPane().add(cBoxesPanel);
 		
@@ -344,16 +463,20 @@ public class AnimationEditor {
 	public static void resetStepVals() {
 		interuptable.setSelected(false);
 		specialCancelable.setSelected(false);
+		frameCount.setValue(Animation.FRAMES_PER_SPRITE);
 		boxModel.clear();
 		resetBoxVals();
 	}
 	
 	public static void resetBoxVals() {
+		boxName.setText("Name");
 		rotation.setValue(0);
 		boxX.setValue(50);
 		boxY.setValue(50);
 		boxW.setValue(75);
 		boxH.setValue(25);
+		trajectoryX.setValue(0);
+		trajectoryY.setValue(0);
 	}
 	
 	public static void selectAnim(Animation anim) {
@@ -373,7 +496,8 @@ public class AnimationEditor {
 	public static void selectStep(AnimationStep step) {
 		interuptable.setSelected(step.isInteruptable());
 		specialCancelable.setSelected(step.isSpecialInteruptable());
-
+		frameCount.setValue(step.getFramesToDisplay());
+		
 		boxModel.clear();
 		for (CollisionBox c : step.getCollisions().getBoxes()) {
 			boxModel.addElement(c);
@@ -385,10 +509,13 @@ public class AnimationEditor {
 	}
 	
 	public static void selectBox(CollisionBox box) {
+		boxName.setText(box.toString());
 		rotation.setValue((int) box.getAngle());
 		boxX.setValue(box.getX());
 		boxY.setValue(box.getY());
 		boxW.setValue(box.getWidth());
 		boxH.setValue(box.getHeight());
+		trajectoryX.setValue((double) box.getTrajectory().getX());
+		trajectoryY.setValue((double) box.getTrajectory().getY());
 	}
 }
