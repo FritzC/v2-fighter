@@ -19,7 +19,7 @@ public class Ryu extends Fighter {
 		anims.put(ATTACK_ANIM, new Animation(false, -1, Animation.extractSprites(sprites, 3264, 3275)));
 		*/setAnim(IDLE_ANIM);
 	}
-
+//Tyler
 	@Override
 	public void handleInputs() {
 	}
