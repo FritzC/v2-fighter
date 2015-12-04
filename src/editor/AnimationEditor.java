@@ -586,7 +586,7 @@ public class AnimationEditor {
 			public void paintComponent(Graphics g) {
 				g.setColor(Color.LIGHT_GRAY);
 				g.fillRect(0, 0, getWidth(), getHeight());
-				if (preview.isSelected() && !anims.isSelectionEmpty()) {
+				if (preview.isSelected() && !anims.isSelectionEmpty() && anims.getSelectedValue().getSteps().size() > 0) {
 					anims.getSelectedValue().draw(0, 0, g);
 					anims.getSelectedValue().advance();
 				} else if (!steps.isSelectionEmpty()) {
