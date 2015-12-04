@@ -39,7 +39,7 @@ public class CollisionAreas {
 		this.owner = owner;
 	}
 	
-	public boolean collision(CollisionAreas b) {
+	public CollisionBox collision(CollisionAreas b) {
 /*		for (Rectangle r : boxes) {
 			for (Rectangle r2 : b.boxes) {
 				if (r.getMinX() + offX <= r2.getMinX() + b.offX
@@ -93,7 +93,7 @@ public class CollisionAreas {
 			}
 		}*/
 		
-		return false;
+		return null;
 	}
 	
 	public List<CollisionBox> getBoxes() {

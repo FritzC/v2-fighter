@@ -97,6 +97,13 @@ public class AnimationEditor {
 	static JSpinner trajectoryY;
 	static JButton load;
 	static JButton save;
+	static JCheckBox hitInvincible;
+	static JCheckBox normalInvincible;
+	static JCheckBox grabInvincible;
+	static JCheckBox projectileInvincible;
+	static JSpinner armorAmount;
+	static JSpinner hitstun;
+	static JCheckBox knockdown;
 	
 	
 	public static void main(String args[]) {
@@ -130,7 +137,11 @@ public class AnimationEditor {
 				imagePicker.setFileFilter(filter);
 				int returnVal = imagePicker.showSaveDialog(frame);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
-					saveAnimations(imagePicker.getSelectedFile());
+					File f = imagePicker.getSelectedFile();
+					if (!f.getName().endsWith(".anims")) {
+						f = new File(f.getAbsolutePath() + ".anims");
+					}
+					saveAnimations(f);
 				}
 			}
 		});
@@ -262,12 +273,16 @@ public class AnimationEditor {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					List<CollisionBox> boxes = new ArrayList<>();
 					if (!steps.isSelectionEmpty()) {
-						boxes.addAll(anims.getSelectedValue().getSteps().get(steps.getSelectedIndex()).getCollisions().getBoxes());
+						boxes.addAll(anims.getSelectedValue().getSteps().get(steps.getSelectedIndex()).getCollisions()
+								.getBoxes());
 					}
 					anims.getSelectedValue().getSteps()
 							.add(new AnimationStep(new Sprite(imagePicker.getSelectedFile().getAbsolutePath()),
 									interuptable.isSelected(), specialCancelable.isSelected(),
-									(int) frameCount.getValue(), new CollisionAreas(boxes)));
+									(int) frameCount.getValue(), hitInvincible.isSelected(),
+									normalInvincible.isSelected(), grabInvincible.isSelected(),
+									projectileInvincible.isSelected(), (int) armorAmount.getValue(),
+									new CollisionAreas(boxes)));
 					stepModel.addElement(
 							anims.getSelectedValue().getSteps().get(anims.getSelectedValue().getSteps().size() - 1));
 					steps.setSelectedIndex(stepModel.size() - 1);
@@ -325,6 +340,52 @@ public class AnimationEditor {
 			}
 		});
 		p2.add(frameCount);
+		armorAmount = new JSpinner(new SpinnerNumberModel(0, 0, 100, 1));
+		armorAmount.setToolTipText("Number of hits of armor");
+		armorAmount.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					getSelectedStep().setArmorAmount((int) armorAmount.getValue());
+				}
+			}
+		});
+		p2.add(armorAmount);
+		hitInvincible = new JCheckBox("Hit Invincible");
+		hitInvincible.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					getSelectedStep().setHitInvincible(hitInvincible.isSelected());
+				}
+			}
+		});
+		p2.add(hitInvincible);
+		normalInvincible = new JCheckBox("Normal Invincible");
+		normalInvincible.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					getSelectedStep().setNormalInvincible(normalInvincible.isSelected());
+				}
+			}
+		});
+		p2.add(normalInvincible);
+		grabInvincible = new JCheckBox("Grab Invincible");
+		grabInvincible.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					getSelectedStep().setHitInvincible(grabInvincible.isSelected());
+				}
+			}
+		});
+		p2.add(grabInvincible);
+		projectileInvincible = new JCheckBox("Projectile Invincible");
+		projectileInvincible.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					getSelectedStep().setProjectileInvincible(projectileInvincible.isSelected());
+				}
+			}
+		});
+		p2.add(projectileInvincible);
 		stepPanel.add(p2, BorderLayout.SOUTH);
 		frame.getContentPane().add(stepPanel);
 		
@@ -362,9 +423,10 @@ public class AnimationEditor {
 				Double f1 = (Double) trajectoryX.getValue();
 				Double f2 = (Double) trajectoryY.getValue();
 				steps.getSelectedValue().getCollisions().getBoxes()
-						.add(new CollisionBox(name, Color.YELLOW, boxX.getValue(),
-								boxY.getValue(), boxW.getValue(), boxH.getValue(),
-								rotation.getValue(), false, (int) damage.getValue(), new Vector(f1.floatValue(), f2.floatValue())));
+						.add(new CollisionBox(name, Color.YELLOW, boxX.getValue(), boxY.getValue(), boxW.getValue(),
+								boxH.getValue(), rotation.getValue(), false, (int) damage.getValue(),
+								(int) hitstun.getValue(), knockdown.isSelected(),
+								new Vector(f1.floatValue(), f2.floatValue())));
 				boxModel.addElement(steps.getSelectedValue().getCollisions().getBoxes()
 						.get(steps.getSelectedValue().getCollisions().getBoxes().size() - 1));
 				cBoxes.setSelectedIndex(boxModel.size() - 1);
@@ -497,6 +559,25 @@ public class AnimationEditor {
 			}
 		});
 		j3.add(trajectoryY);
+		knockdown = new JCheckBox("Knocks down");
+		knockdown.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					getSelectedBox().setKnockdown(knockdown.isSelected());
+				}
+			}
+		});
+		j3.add(knockdown);
+		hitstun = new JSpinner(new SpinnerNumberModel(0, 0, 10000, 1));
+		hitstun.setToolTipText("Frames of hitstun");
+		hitstun.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					getSelectedBox().setHitstunFrames((int) hitstun.getValue());
+				}
+			}
+		});
+		j3.add(hitstun);
 		cBoxesPanel.add(j3, BorderLayout.SOUTH);
 		frame.getContentPane().add(cBoxesPanel);
 		
@@ -534,6 +615,10 @@ public class AnimationEditor {
 		frame.setVisible(true);
 	}
 	
+	public static AnimationStep getSelectedStep() {
+		return anims.getSelectedValue().getSteps().get(steps.getSelectedIndex());
+	}
+	
 	public static CollisionBox getSelectedBox() {
 		return anims.getSelectedValue().getSteps().get(steps.getSelectedIndex()).getCollisions().getBoxes()
 				.get(cBoxes.getSelectedIndex());
@@ -550,6 +635,11 @@ public class AnimationEditor {
 		interuptable.setSelected(false);
 		specialCancelable.setSelected(false);
 		frameCount.setValue(Animation.FRAMES_PER_SPRITE);
+		hitInvincible.setSelected(false);
+		normalInvincible.setSelected(false);
+		grabInvincible.setSelected(false);
+		projectileInvincible.setSelected(false);
+		armorAmount.setValue(0);
 		boxModel.clear();
 		resetBoxVals();
 	}
@@ -563,6 +653,8 @@ public class AnimationEditor {
 		boxH.setValue(25);
 		trajectoryX.setValue(0d);
 		trajectoryY.setValue(0d);
+		hitstun.setValue(0);
+		knockdown.setSelected(false);
 	}
 	
 	public static void selectAnim(Animation anim) {
@@ -583,6 +675,11 @@ public class AnimationEditor {
 		interuptable.setSelected(step.isInteruptable());
 		specialCancelable.setSelected(step.isSpecialInteruptable());
 		frameCount.setValue(step.getFramesToDisplay());
+		hitInvincible.setSelected(step.isHitInvincible());
+		normalInvincible.setSelected(step.isNormalInvincible());
+		grabInvincible.setSelected(step.isGrabInvincible());
+		projectileInvincible.setSelected(step.isProjectileInvincible());
+		armorAmount.setValue(step.getArmorAmount());
 		
 		boxModel.clear();
 		for (CollisionBox c : step.getCollisions().getBoxes()) {
@@ -603,6 +700,8 @@ public class AnimationEditor {
 		boxH.setValue(box.getHeight());
 		trajectoryX.setValue((double) box.getTrajectory().getX());
 		trajectoryY.setValue((double) box.getTrajectory().getY());
+		hitstun.setValue(box.getHitstunFrames());
+		knockdown.setSelected(box.knocksDown());
 	}
 
 	public static void saveAnimations(File f) {
@@ -634,6 +733,16 @@ public class AnimationEditor {
 					writer.newLine();
 					writer.append(tab + tab + tab + "SpecialCancelable: " + step.isSpecialInteruptable());
 					writer.newLine();
+					writer.append(tab + tab + tab + "HitInvincible: " + step.isHitInvincible());
+					writer.newLine();
+					writer.append(tab + tab + tab + "NormalInvincible: " + step.isNormalInvincible());
+					writer.newLine();
+					writer.append(tab + tab + tab + "GrabInvincible: " + step.isGrabInvincible());
+					writer.newLine();
+					writer.append(tab + tab + tab + "ProjectileInvincible: " + step.isProjectileInvincible());
+					writer.newLine();
+					writer.append(tab + tab + tab + "ArmorAmount: " + step.getArmorAmount());
+					writer.newLine();
 					writer.append(tab + tab + tab + "CollisionBoxes[" + step.getCollisions().getBoxes().size() + "] {");
 					writer.newLine();
 					for (int m = 0; m < step.getCollisions().getBoxes().size(); m++) {
@@ -653,6 +762,10 @@ public class AnimationEditor {
 						writer.append(tab + tab + tab + tab + tab + "Rotation: " + box.getAngle());
 						writer.newLine();
 						writer.append(tab + tab + tab + tab + tab + "Damage: " + box.getDamage());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Hitstun: " + box.getHitstunFrames());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Knockdown: " + box.knocksDown());
 						writer.newLine();
 						writer.append(tab + tab + tab + tab + tab + "Trajectory: " + box.getTrajectory());
 						writer.newLine();

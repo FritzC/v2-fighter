@@ -14,9 +14,11 @@ public class CollisionBox {
 	private boolean hitbox;
 	private int damage;
 	private Vector trajectory;
+	private int hitstunFrames;
+	private boolean knockdown;
 
 	public CollisionBox(String name, Color color, int x, int y, int width, int height, float angle, boolean hitbox,
-			int damage, Vector trajectory) {
+			int damage, int hitstunFrames, boolean knockdown, Vector trajectory) {
 		this.name = name;
 		this.x = x;
 		this.y = y;
@@ -27,6 +29,8 @@ public class CollisionBox {
 		this.hitbox = hitbox;
 		this.damage = damage;
 		this.trajectory = trajectory;
+		this.hitstunFrames = hitstunFrames;
+		this.knockdown = knockdown;
 	}
 	
 	public void draw(int offX, int offY, Graphics g) {
@@ -118,5 +122,21 @@ public class CollisionBox {
 	
 	public void setTrajectory(Vector v) {
 		trajectory = v;
+	}
+
+	public int getHitstunFrames() {
+		return hitstunFrames;
+	}
+
+	public void setHitstunFrames(int hitstunFrames) {
+		this.hitstunFrames = hitstunFrames;
+	}
+	
+	public void setKnockdown(boolean b) {
+		knockdown = b;
+	}
+	
+	public boolean knocksDown() {
+		return knockdown;
 	}
 }

@@ -25,44 +25,47 @@ import physics.CollisionBox;
 import physics.Vector;
 
 public class Animation {
-	
+
 	/**
 	 * Number of frames each sprite is displayed for
 	 */
 	public final static int FRAMES_PER_SPRITE = 5;
-	
+
 	private String name;
-	
+
 	/**
 	 * Array of sprites in the animation
 	 */
 	private List<AnimationStep> steps;
-	
+
 	/**
 	 * Frame currently being drawn
 	 */
 	private int currentStep;
-	
+
 	/**
-	 * Frames the current sprite has to still be displayed for
-	 * When this is 0, switch to the next one
+	 * Frames the current sprite has to still be displayed for When this is 0,
+	 * switch to the next one
 	 */
 	private int framesToDisplay;
-	
+
 	/**
 	 * Speed the animation is played
 	 */
 	private float speed;
-	
+
 	/**
 	 * Whether the animation will repeat
 	 */
 	private boolean repeat;
-	
+
 	/**
 	 * A character animation
-	 * @param repeat - Whether the animation loops
-	 * @param sprites - Array of sprites that the animation is of
+	 * 
+	 * @param repeat
+	 *            - Whether the animation loops
+	 * @param sprites
+	 *            - Array of sprites that the animation is of
 	 */
 	public Animation(String name, boolean repeat, List<AnimationStep> steps) {
 		this.name = name;
@@ -74,7 +77,7 @@ public class Animation {
 		}
 		this.repeat = repeat;
 	}
-	
+
 	/**
 	 * Resets an animation to the beginning
 	 */
@@ -83,30 +86,35 @@ public class Animation {
 		speed = 1.0f;
 		framesToDisplay = steps.get(0).getFramesToDisplay();
 	}
-	
+
 	/**
 	 * Gets whether the animation has finished playing yet
+	 * 
 	 * @return
 	 */
 	public boolean isFinished() {
 		return framesToDisplay == 0 && currentStep == steps.size() - 1 && !repeat;
 	}
-	
+
 	/**
 	 * Draws the animation while advancing the frame if necessary
-	 * @param x - x location to draw at
-	 * @param y - y location to draw at
-	 * @param g - Graphic object to draw with
+	 * 
+	 * @param x
+	 *            - x location to draw at
+	 * @param y
+	 *            - y location to draw at
+	 * @param g
+	 *            - Graphic object to draw with
 	 */
 	public void draw(int x, int y, Graphics g) {
 		try {
 			steps.get(currentStep).draw(x, y, g);
 		} catch (Exception e) {
 			Main.errorMsg("Error drawing frame: " + currentStep + " of " + (steps.size() - 1));
-			//e.printStackTrace();
+			// e.printStackTrace();
 		}
 	}
-	
+
 	/**
 	 * Advances a frame if necessary
 	 */
@@ -121,34 +129,24 @@ public class Animation {
 			framesToDisplay = steps.get(currentStep).getFramesToDisplay();
 		}
 	}
-	
-	/**
-	 * Extract a section of sprites from the characters map of sprites
-	 * @param sprites - Map of sprites to pull from
-	 * @param startId - Beginning sprite ID
-	 * @param endId - Ending sprite ID
-	 * @return - Array of sprites ranging from startId to endId
-	 */
-	public static Sprite[] extractSprites(Map<Integer, Sprite> sprites, int startId, int endId) {
-		Sprite[] list = new Sprite[endId - startId];
-		for (int i = startId; i < endId; i++) {
-			list[i - startId] = sprites.get(i);
-		}
-		return list;
+
+	public int getArmorAmount() {
+		return steps.get(currentStep).getArmorAmount();
 	}
-	
+
 	/**
 	 * Check if the player can act during this animation yet
+	 * 
 	 * @return - Whether the player can act during this animation yet
 	 */
 	public boolean canAct() {
 		return steps.get(currentStep).isInteruptable();
 	}
-	
+
 	public void setString(String s) {
 		name = s;
 	}
-	
+
 	public String toString() {
 		return name;
 	}
@@ -156,7 +154,7 @@ public class Animation {
 	public boolean repeat() {
 		return repeat;
 	}
-	
+
 	public List<AnimationStep> getSteps() {
 		return steps;
 	}
@@ -166,6 +164,7 @@ public class Animation {
 	}
 
 	public static Map<String, Animation> loadAnimations(File f) {
+		String tab = "	";
 		Map<String, Animation> anims = new HashMap<>();
 		try (BufferedReader reader = Files.newBufferedReader(f.toPath(), Charset.defaultCharset())) {
 			String lineFromFile = "";
@@ -174,33 +173,85 @@ public class Animation {
 					String name = lineFromFile.split("\"")[1];
 					boolean repeat = Boolean.parseBoolean(stripText(reader.readLine()).replace("Repeat: ", ""));
 					List<AnimationStep> steps = new ArrayList<>();
-					while (!(lineFromFile = reader.readLine()).contains("}")) {
+					String sName = "";
+					BufferedImage image = null;
+					int framesToDisplay = FRAMES_PER_SPRITE;
+					boolean interuptable = false, specialCancelable = false, hitInvincible = false,
+							normalInvincible = false, grabInvincible = false, projectileInvincible = false;
+					int armorAmount = 0;
+					List<CollisionBox> boxes = new ArrayList<>();
+					while (!(lineFromFile = reader.readLine()).equals(tab + "}")) {
 						if (lineFromFile.contains("[Step ")) {
-							String sName = stripText(lineFromFile).split(" ")[1].replace("]", "");
-							BufferedImage image = ImageIO.read(new ByteArrayInputStream(
-									Base64.decode(stripText(reader.readLine()).replace("Image: ", ""))));
-							int framesToDisplay = Integer.parseInt(stripText(reader.readLine()).replace("FramesToDisplay: ", ""));
-							boolean interuptable = Boolean.parseBoolean(stripText(reader.readLine()).replace("Interuptable: ", ""));
-							boolean specialCancelable = Boolean.parseBoolean(stripText(reader.readLine()).replace("SpecialCancelable: ", ""));
-							List<CollisionBox> boxes = new ArrayList<>();
-							while (!(lineFromFile = reader.readLine()).contains("}")) {
-								if (!lineFromFile.contains("CollisionBoxes")) {
-									String bName = stripText(lineFromFile).replace("[", "").replace("] {", "");
-									Color c = new Color(Integer.parseInt(stripText(reader.readLine()).replace("Color: ", "")));
-									int x = Integer.parseInt(stripText(reader.readLine()).replace("X: ", ""));
-									int y = Integer.parseInt(stripText(reader.readLine()).replace("Y: ", ""));
-									int width = Integer.parseInt(stripText(reader.readLine()).replace("Width: ", ""));
-									int height = Integer.parseInt(stripText(reader.readLine()).replace("Height: ", ""));
-									float rotation = Float.parseFloat(stripText(reader.readLine()).replace("Rotation: ", ""));
-									int damage = Integer.parseInt(stripText(reader.readLine()).replace("Damage: ", ""));
-									Vector v = Vector.parseVector(stripText(reader.readLine()).replace("Trajectory: ", ""));
-									boxes.add(new CollisionBox(bName, c, x, y, width, height, rotation, false, damage, v));	
-									reader.readLine();
+							sName = stripText(lineFromFile).split(" ")[1].replace("]", "");
+						} else if (lineFromFile.contains("Image: ")) {
+							image = ImageIO.read(new ByteArrayInputStream(
+									Base64.decode(stripText(lineFromFile).replace("Image: ", ""))));
+						} else if (lineFromFile.contains("FramesToDisplay: ")) {
+							framesToDisplay = Integer
+									.parseInt(stripText(lineFromFile).replace("FramesToDisplay: ", ""));
+						} else if (lineFromFile.contains("Interuptable: ")) {
+							interuptable = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("Interuptable: ", ""));
+						} else if (lineFromFile.contains("SpecialCancelable: ")) {
+							specialCancelable = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("SpecialCancelable: ", ""));
+						} else if (lineFromFile.contains("HitInvincible: ")) {
+							hitInvincible = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("HitInvincible: ", ""));
+						} else if (lineFromFile.contains("NormalInvincible: ")) {
+							normalInvincible = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("NormalInvincible: ", ""));
+						} else if (lineFromFile.contains("GrabInvincible: ")) {
+							grabInvincible = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("GrabInvincible: ", ""));
+						} else if (lineFromFile.contains("ProjectileInvincible: ")) {
+							projectileInvincible = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("ProjectileInvincible: ", ""));
+						} else if (lineFromFile.contains("ArmorAmount: ")) {
+							armorAmount = Integer
+									.parseInt(stripText(lineFromFile).replace("ArmorAmount: ", ""));
+						} else if (lineFromFile.contains("CollisionBoxes")) {
+							String bName = "";
+							Color c = Color.YELLOW;
+							int x = 0, y = 0, width = 0, height = 0, damage = -1, hitstun = 0;
+							float rotation = 0;
+							boolean knockdown = false;
+							Vector v = new Vector(0, 0);
+							while (!(lineFromFile = reader.readLine()).equals(tab + tab + tab + "}")) {
+								if (lineFromFile.contains("] {")) {
+									bName = stripText(lineFromFile).replace("[", "").replace("] {", "");
+								} else if (lineFromFile.contains("Color: ")) {
+									c = new Color(Integer.parseInt(stripText(lineFromFile).replace("Color: ", "")));
+								} else if (lineFromFile.contains("X: ")) {
+									x = Integer.parseInt(stripText(lineFromFile).replace("X: ", ""));
+								} else if (lineFromFile.contains("Y: ")) {
+									y = Integer.parseInt(stripText(lineFromFile).replace("Y: ", ""));
+								} else if (lineFromFile.contains("Width: ")) {
+									width = Integer.parseInt(stripText(lineFromFile).replace("Width: ", ""));
+								} else if (lineFromFile.contains("Height: ")) {
+									height = Integer.parseInt(stripText(lineFromFile).replace("Height: ", ""));
+								} else if (lineFromFile.contains("Rotation: ")) {
+									rotation = Float.parseFloat(stripText(lineFromFile).replace("Rotation: ", ""));
+								} else if (lineFromFile.contains("Damage: ")) {
+									damage = Integer.parseInt(stripText(lineFromFile).replace("Damage: ", ""));
+								} else if (lineFromFile.contains("Hitstun: ")) {
+									hitstun = Integer.parseInt(stripText(lineFromFile).replace("Hitstun: ", ""));
+								} else if (lineFromFile.contains("Knockdown: ")) {
+									knockdown = Boolean
+											.parseBoolean(stripText(lineFromFile).replace("Knockdown: ", ""));
+								} else if (lineFromFile.contains("Trajectory: ")) {
+									v = Vector.parseVector(stripText(lineFromFile).replace("Trajectory: ", ""));
+								} else if (lineFromFile.equals(tab + tab + tab + tab + "}")) {
+									boxes.add(new CollisionBox(bName, c, x, y, width, height, rotation, false, damage,
+											hitstun, knockdown, v));
 								}
 							}
-							steps.add(new AnimationStep(new Sprite(image, sName), interuptable, specialCancelable, framesToDisplay, new CollisionAreas(boxes)));
-							reader.readLine();
-						
+						}
+						if (lineFromFile.equals(tab + tab + "}")) {
+							steps.add(new AnimationStep(new Sprite(image, sName), interuptable, specialCancelable,
+									framesToDisplay, hitInvincible, normalInvincible, grabInvincible, projectileInvincible,
+									armorAmount, new CollisionAreas(new ArrayList<CollisionBox>(boxes))));
+							boxes.clear();
 						}
 					}
 					anims.put(name, new Animation(name, repeat, steps));
@@ -212,7 +263,7 @@ public class Animation {
 		}
 		return anims;
 	}
-	
+
 	public static String stripText(String s) {
 		return s.replaceAll("	", "");
 	}

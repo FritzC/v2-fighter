@@ -27,10 +27,10 @@ public class PhysicsEngine {
 		for (Fighter f : fighters) {
 			f.setX(f.getX() + f.getVelocity().getX());
 			f.setY(f.getY() + f.getVelocity().getY());
-			if (f.boundingBoxes().collision(stage.boundingBoxes())) {
+			if (f.boundingBoxes().collision(stage.boundingBoxes()) != null) {
 				do {
 					f.setY((int) f.getY() - 1);
-				} while (f.boundingBoxes().collision(stage.boundingBoxes()));
+				} while (f.boundingBoxes().collision(stage.boundingBoxes()) != null);
 				f.setGrounded(true);
 				f.getVelocity().setX(0);
 				f.getVelocity().setY(0);
@@ -39,10 +39,10 @@ public class PhysicsEngine {
 		for (GameObject g : objects) {
 			g.setX(g.getX() + g.getVelocity().getX());
 			g.setY(g.getY() + g.getVelocity().getY());
-			if (g.boundingBoxes().collision(stage.boundingBoxes())) {
+			if (g.boundingBoxes().collision(stage.boundingBoxes()) != null) {
 				do {
 					g.setY((int) g.getY() - 1);
-				} while (g.boundingBoxes().collision(stage.boundingBoxes()));
+				} while (g.boundingBoxes().collision(stage.boundingBoxes()) != null);
 				g.setGrounded(true);
 				g.getVelocity().setX(0);
 				g.getVelocity().setY(0);
@@ -55,7 +55,7 @@ public class PhysicsEngine {
 			// hitboxes of fighter moves here
 			
 			for (GameObject g : objects) {
-				if (f.boundingBoxes().collision(g.boundingBoxes())) {
+				if (f.boundingBoxes().collision(g.boundingBoxes()) != null) {
 					f.collisionBehavior();
 					g.collisionBehavior();
 					break;
