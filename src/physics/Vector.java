@@ -32,4 +32,15 @@ public class Vector {
 	public void setY(float y) {
 		this.y = y;
 	}
+	
+	public String toString() {
+		return "[" + x + ", " + y + "]";
+	}
+	
+	public static Vector parseVector(String s) {
+		Vector v = new Vector(0, 0);
+		v.setX(Float.parseFloat(s.split(", ")[0].replace("[","")));
+		v.setY(Float.parseFloat(s.split(", ")[1].replace("]","")));
+		return v;
+	}
 }

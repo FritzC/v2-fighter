@@ -1,4 +1,4 @@
-package characters;
+package editor;
 
 import java.awt.BorderLayout;
 import java.awt.Color;
@@ -7,9 +7,18 @@ import java.awt.Graphics;
 import java.awt.GridLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferByte;
+import java.io.BufferedWriter;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
+import javax.imageio.ImageIO;
 import javax.swing.DefaultListModel;
 import javax.swing.JButton;
 import javax.swing.JCheckBox;
@@ -25,12 +34,17 @@ import javax.swing.JSpinner;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.SpinnerNumberModel;
+import javax.swing.WindowConstants;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import javax.swing.event.ListSelectionEvent;
 import javax.swing.event.ListSelectionListener;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+
+import characters.Animation;
+import characters.AnimationStep;
 import display.Sprite;
 import display.Window;
 import physics.CollisionAreas;
@@ -81,6 +95,8 @@ public class AnimationEditor {
 	static Color currColor;
 	static JSpinner trajectoryX;
 	static JSpinner trajectoryY;
+	static JButton load;
+	static JButton save;
 	
 	
 	public static void main(String args[]) {
@@ -105,6 +121,44 @@ public class AnimationEditor {
 		});
 		animsScroller = new JScrollPane(anims);
 		animsPanel.add(animsScroller, BorderLayout.CENTER);
+		JPanel p3 = new JPanel(new GridLayout(0, 2));
+		save = new JButton("Save");
+		save.setToolTipText("Save animations to file");
+		save.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				FileNameExtensionFilter filter = new FileNameExtensionFilter("Animation files", "anims");
+				imagePicker.setFileFilter(filter);
+				int returnVal = imagePicker.showSaveDialog(frame);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					saveAnimations(imagePicker.getSelectedFile());
+				}
+			}
+		});
+		p3.add(save);
+		load = new JButton("Load");
+		load.setToolTipText("Load animations from file");
+		load.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				FileNameExtensionFilter filter = new FileNameExtensionFilter("Animation files", "anims");
+				imagePicker.setFileFilter(filter);
+				int returnVal = imagePicker.showOpenDialog(frame);
+				if (returnVal == JFileChooser.APPROVE_OPTION) {
+					animModel.clear();
+					resetAnimVals();
+					Map<String, Animation> animMap = Animation.loadAnimations(imagePicker.getSelectedFile());
+					for (Animation a : animMap.values()) {
+						animModel.addElement(a);
+					}
+					if (animModel.size() > 0) {
+						anims.setSelectedValue(animModel.getElementAt(0), true);
+						selectAnim(animModel.getElementAt(0));
+					}
+				}
+			}
+		});
+		p3.add(load);
+		animsPanel.add(p3, BorderLayout.NORTH);
+		
 		JPanel p = new JPanel(new GridLayout(0, 2));
 		addAnim = new JButton("+");
 		addAnim.setToolTipText("Add animation");
@@ -124,8 +178,17 @@ public class AnimationEditor {
 		deleteAnim.setToolTipText("Delete animation");
 		deleteAnim.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
+				int newSelection = anims.getSelectedIndex() - 1;
 				animModel.remove(anims.getSelectedIndex());
-				resetAnimVals();
+				if (animModel.size() > 0) {
+					if (newSelection < 0) {
+						newSelection = 0;
+					}
+					anims.setSelectedValue(animModel.getElementAt(newSelection), true);
+					selectAnim(animModel.getElementAt(newSelection));
+				} else {
+					resetAnimVals();
+				}
 			}
 		});
 		p.add(deleteAnim);
@@ -187,15 +250,14 @@ public class AnimationEditor {
 		addStep = new JButton("+");
 		addStep.setToolTipText("Add animation step");
 		imagePicker = new JFileChooser("./sprites");
-	    FileNameExtensionFilter filter = new FileNameExtensionFilter(
-	        "PNG Images", "png");
-	    imagePicker.setFileFilter(filter);
 		addStep.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (anims.isSelectionEmpty()) {
 					JOptionPane.showMessageDialog(frame, "You need to select an animation first!");
 					return;
 				}
+				FileNameExtensionFilter filter = new FileNameExtensionFilter("PNG Images", "png");
+				imagePicker.setFileFilter(filter);
 				int returnVal = imagePicker.showOpenDialog(frame);
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					List<CollisionBox> boxes = new ArrayList<>();
@@ -219,9 +281,18 @@ public class AnimationEditor {
 		deleteStep.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!steps.isSelectionEmpty()) {
+					int newSelection = steps.getSelectedIndex() - 1;
 					anims.getSelectedValue().getSteps().remove(steps.getSelectedIndex());
 					stepModel.remove(steps.getSelectedIndex());
-					resetStepVals();
+					if (stepModel.size() > 0) {
+						if (newSelection < 0) {
+							newSelection = 0;
+						}
+						steps.setSelectedValue(stepModel.getElementAt(newSelection), true);
+						selectStep(stepModel.getElementAt(newSelection));
+					} else {
+						resetStepVals();
+					}
 				}
 			}
 		});
@@ -306,10 +377,19 @@ public class AnimationEditor {
 		deleteBox.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
+					int newSelection = cBoxes.getSelectedIndex() - 1;
 					anims.getSelectedValue().getSteps().get(steps.getSelectedIndex()).getCollisions().getBoxes()
 							.remove(cBoxes.getSelectedIndex());
 					boxModel.remove(cBoxes.getSelectedIndex());
-					resetBoxVals();
+					if (boxModel.size() > 0) {
+						if (newSelection < 0) {
+							newSelection = 0;
+						}
+						cBoxes.setSelectedValue(boxModel.getElementAt(newSelection), true);
+						selectBox(boxModel.getElementAt(newSelection));
+					} else {
+						resetBoxVals();
+					}
 				}
 			}
 		});
@@ -321,7 +401,7 @@ public class AnimationEditor {
 		boxName.addActionListener(new ActionListener() {
 			public void actionPerformed(ActionEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
-					cBoxes.getSelectedValue().setName(boxName.getText());
+					getSelectedBox().setName(boxName.getText());
 					cBoxes.repaint();
 				}
 			}
@@ -336,7 +416,7 @@ public class AnimationEditor {
 		                     frame, "Choose Color", currColor);
 					if (newColor != null) {
 						currColor = newColor;
-						cBoxes.getSelectedValue().setColor(currColor);
+						getSelectedBox().setColor(currColor);
 					}
 				}
 			}
@@ -347,7 +427,7 @@ public class AnimationEditor {
 		boxX.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
-					cBoxes.getSelectedValue().setX(boxX.getValue()); 
+					getSelectedBox().setX(boxX.getValue()); 
 				}
 			}
 		});
@@ -357,7 +437,7 @@ public class AnimationEditor {
 		boxY.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
-					cBoxes.getSelectedValue().setY(boxY.getValue()); 
+					getSelectedBox().setY(boxY.getValue()); 
 				}
 			}
 		});
@@ -367,7 +447,7 @@ public class AnimationEditor {
 		boxW.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
-					cBoxes.getSelectedValue().setWidth(boxW.getValue()); 
+					getSelectedBox().setWidth(boxW.getValue()); 
 				}
 			}
 		});
@@ -377,7 +457,7 @@ public class AnimationEditor {
 		boxH.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
-					cBoxes.getSelectedValue().setHeight(boxH.getValue()); 
+					getSelectedBox().setHeight(boxH.getValue());
 				}
 			}
 		});
@@ -387,7 +467,7 @@ public class AnimationEditor {
 		rotation.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
-					cBoxes.getSelectedValue().setAngle(rotation.getValue()); 
+					getSelectedBox().setAngle(rotation.getValue()); 
 				}
 			}
 		});
@@ -395,24 +475,24 @@ public class AnimationEditor {
 		damage = new JSpinner(new SpinnerNumberModel(-1, -1, 1000, 1));
 		damage.setToolTipText("Damage hitbox does");
 		j3.add(damage);
-		trajectoryX = new JSpinner(new SpinnerNumberModel(0, -25, 25, 0.25));
+		trajectoryX = new JSpinner(new SpinnerNumberModel(0d, -25d, 25d, 0.25d));
 		trajectoryX.setToolTipText("Trajectory (X Component)");
 		trajectoryX.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
 					Double f = (Double) trajectoryX.getValue();
-					cBoxes.getSelectedValue().getTrajectory().setX(f.floatValue()); 
+					getSelectedBox().getTrajectory().setX(f.floatValue()); 
 				}
 			}
 		});
 		j3.add(trajectoryX);
-		trajectoryY = new JSpinner(new SpinnerNumberModel(0, -25, 25, 0.25));
+		trajectoryY = new JSpinner(new SpinnerNumberModel(0d, -25d, 25d, 0.25d));
 		trajectoryY.setToolTipText("Trajectory (Y Component)");
 		trajectoryY.addChangeListener(new ChangeListener() {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
 					Double f = (Double) trajectoryY.getValue();
-					cBoxes.getSelectedValue().getTrajectory().setY(f.floatValue()); 
+					getSelectedBox().getTrajectory().setY(f.floatValue()); 
 				}
 			}
 		});
@@ -450,7 +530,13 @@ public class AnimationEditor {
 			}
 			
 		}).start();
+		frame.setDefaultCloseOperation(WindowConstants.EXIT_ON_CLOSE);
 		frame.setVisible(true);
+	}
+	
+	public static CollisionBox getSelectedBox() {
+		return anims.getSelectedValue().getSteps().get(steps.getSelectedIndex()).getCollisions().getBoxes()
+				.get(cBoxes.getSelectedIndex());
 	}
 	
 	public static void resetAnimVals() {
@@ -475,8 +561,8 @@ public class AnimationEditor {
 		boxY.setValue(50);
 		boxW.setValue(75);
 		boxH.setValue(25);
-		trajectoryX.setValue(0);
-		trajectoryY.setValue(0);
+		trajectoryX.setValue(0d);
+		trajectoryY.setValue(0d);
 	}
 	
 	public static void selectAnim(Animation anim) {
@@ -518,4 +604,74 @@ public class AnimationEditor {
 		trajectoryX.setValue((double) box.getTrajectory().getX());
 		trajectoryY.setValue((double) box.getTrajectory().getY());
 	}
+
+	public static void saveAnimations(File f) {
+		try(BufferedWriter writer = Files.newBufferedWriter(
+		        f.toPath(), Charset.defaultCharset())){
+			String tab = "	";
+			for (int i = 0; i < animModel.size(); i++) {
+				Animation a = animModel.getElementAt(i);
+				writer.append("Animation: \"" + a.toString() + "\" {");
+				writer.newLine();
+				writer.append(tab + "Repeat: " + a.repeat());
+				writer.newLine();
+				writer.append(tab + "Steps[" + a.getSteps().size() + "] {");
+				writer.newLine();
+				for (int n = 0; n < a.getSteps().size(); n++) {
+					AnimationStep step = a.getSteps().get(n);
+					ByteArrayOutputStream baos=new ByteArrayOutputStream(1000);
+					ImageIO.write(step.getSprite().getImage(), "png", baos);
+					baos.flush();
+					String bytes = Base64.encode(baos.toByteArray());
+					baos.close();
+					writer.append(tab + tab + "[Step " + n + "] {");
+					writer.newLine();
+					writer.append(tab + tab + tab + "Image: " +  bytes);
+					writer.newLine();
+					writer.append(tab + tab + tab + "FramesToDisplay: " + step.getFramesToDisplay());
+					writer.newLine();
+					writer.append(tab + tab + tab + "Interuptable: " + step.isInteruptable());
+					writer.newLine();
+					writer.append(tab + tab + tab + "SpecialCancelable: " + step.isSpecialInteruptable());
+					writer.newLine();
+					writer.append(tab + tab + tab + "CollisionBoxes[" + step.getCollisions().getBoxes().size() + "] {");
+					writer.newLine();
+					for (int m = 0; m < step.getCollisions().getBoxes().size(); m++) {
+						CollisionBox box = step.getCollisions().getBoxes().get(m);
+						writer.append(tab + tab + tab + tab + "[" + box.toString() + "] {");
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Color: " + box.getColor().getRGB());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "X: " + box.getX());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Y: " + box.getY());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Width: " + box.getWidth());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Height: " + box.getHeight());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Rotation: " + box.getAngle());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Damage: " + box.getDamage());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + tab + "Trajectory: " + box.getTrajectory());
+						writer.newLine();
+						writer.append(tab + tab + tab + tab + "}");
+						writer.newLine();
+					}
+					writer.append(tab + tab + tab + "}");
+					writer.newLine();
+					writer.append(tab + tab + "}");
+					writer.newLine();
+				}
+				writer.append(tab + "}");
+				writer.newLine();
+				writer.append("}");
+				writer.newLine();
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
 }

@@ -25,12 +25,21 @@ public class Sprite {
 		}
 	}
 	
+	public Sprite (BufferedImage image, String name) {
+		this.image = image;
+		this.name = name;
+	}
+	
 	public void draw(int x, int y, Graphics g) {
 		g.drawImage(image, x, y, null);
 	}
 
 	public String getName() {
 		return name;
+	}
+	
+	public BufferedImage getImage() {
+		return image;
 	}
 
 }

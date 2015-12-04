@@ -1,11 +1,28 @@
 package characters;
 
+import java.awt.Color;
 import java.awt.Graphics;
+import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import javax.imageio.ImageIO;
+
+import com.sun.org.apache.xerces.internal.impl.dv.util.Base64;
+
 import display.Sprite;
 import main.Main;
+import physics.CollisionAreas;
+import physics.CollisionBox;
+import physics.Vector;
 
 public class Animation {
 	
@@ -146,5 +163,57 @@ public class Animation {
 
 	public void setRepeat(boolean selected) {
 		repeat = selected;
+	}
+
+	public static Map<String, Animation> loadAnimations(File f) {
+		Map<String, Animation> anims = new HashMap<>();
+		try (BufferedReader reader = Files.newBufferedReader(f.toPath(), Charset.defaultCharset())) {
+			String lineFromFile = "";
+			while ((lineFromFile = reader.readLine()) != null) {
+				if (lineFromFile.startsWith("Animation")) {
+					String name = lineFromFile.split("\"")[1];
+					boolean repeat = Boolean.parseBoolean(stripText(reader.readLine()).replace("Repeat: ", ""));
+					List<AnimationStep> steps = new ArrayList<>();
+					while (!(lineFromFile = reader.readLine()).contains("}")) {
+						if (lineFromFile.contains("[Step ")) {
+							String sName = stripText(lineFromFile).split(" ")[1].replace("]", "");
+							BufferedImage image = ImageIO.read(new ByteArrayInputStream(
+									Base64.decode(stripText(reader.readLine()).replace("Image: ", ""))));
+							int framesToDisplay = Integer.parseInt(stripText(reader.readLine()).replace("FramesToDisplay: ", ""));
+							boolean interuptable = Boolean.parseBoolean(stripText(reader.readLine()).replace("Interuptable: ", ""));
+							boolean specialCancelable = Boolean.parseBoolean(stripText(reader.readLine()).replace("SpecialCancelable: ", ""));
+							List<CollisionBox> boxes = new ArrayList<>();
+							while (!(lineFromFile = reader.readLine()).contains("}")) {
+								if (!lineFromFile.contains("CollisionBoxes")) {
+									String bName = stripText(lineFromFile).replace("[", "").replace("] {", "");
+									Color c = new Color(Integer.parseInt(stripText(reader.readLine()).replace("Color: ", "")));
+									int x = Integer.parseInt(stripText(reader.readLine()).replace("X: ", ""));
+									int y = Integer.parseInt(stripText(reader.readLine()).replace("Y: ", ""));
+									int width = Integer.parseInt(stripText(reader.readLine()).replace("Width: ", ""));
+									int height = Integer.parseInt(stripText(reader.readLine()).replace("Height: ", ""));
+									float rotation = Float.parseFloat(stripText(reader.readLine()).replace("Rotation: ", ""));
+									int damage = Integer.parseInt(stripText(reader.readLine()).replace("Damage: ", ""));
+									Vector v = Vector.parseVector(stripText(reader.readLine()).replace("Trajectory: ", ""));
+									boxes.add(new CollisionBox(bName, c, x, y, width, height, rotation, false, damage, v));	
+									reader.readLine();
+								}
+							}
+							steps.add(new AnimationStep(new Sprite(image, sName), interuptable, specialCancelable, framesToDisplay, new CollisionAreas(boxes)));
+							reader.readLine();
+						
+						}
+					}
+					anims.put(name, new Animation(name, repeat, steps));
+				}
+			}
+		} catch (IOException e) {
+			Main.errorMsg("Failed to load animations file " + f.getName());
+			e.printStackTrace();
+		}
+		return anims;
+	}
+	
+	public static String stripText(String s) {
+		return s.replaceAll("	", "");
 	}
 }
