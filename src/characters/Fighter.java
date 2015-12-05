@@ -2,13 +2,16 @@ package characters;
 
 import java.awt.Graphics;
 import java.io.File;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import display.Sprite;
 import inputs.Input;
 import inputs.PlayerInputs;
 import main.Main;
+import physics.CollisionAreas;
 
 public abstract class Fighter extends GameObject {
 
@@ -79,8 +82,6 @@ public abstract class Fighter extends GameObject {
 			} else if (getInputs().getPreviousInputs(1).getInputs().contains(Input.RIGHT)) {
 				setAnim(WALK_B_ANIM);
 				getVelocity().setX(1);
-			} else if (getInputs().getPreviousInputs(1).getInputs().contains(Input.ATTACK)) {
-				setAnim(ATTACK_ANIM);
 			} else if (getInputs().getPreviousInputs(1).getInputs().isEmpty()) {
 				setAnim(IDLE_ANIM);
 				getVelocity().setX(0);
@@ -92,6 +93,7 @@ public abstract class Fighter extends GameObject {
 		Animation anim = anims.get(animation);
 		if (anim == getCurrentAnim())
 			return;
+		resetOthersHitByLists();
 		anim.resetAnim();
 		currentAnim = anim;
 	}
@@ -104,13 +106,24 @@ public abstract class Fighter extends GameObject {
 		}
 		getCurrentAnim().advance();
 	}
+	
+	@Override
+	public CollisionAreas boundingBoxes() {
+		return getCurrentAnim().getCollisionBoxes();
+	}
 
 	public abstract void handleInputs();
 
 	public final static String IDLE_ANIM = "idle";
-	public final static String WALK_F_ANIM = "walk forward";
-	public final static String WALK_B_ANIM = "walk back";
+	public final static String WALK_F_ANIM = "walk_f";
+	public final static String WALK_B_ANIM = "walk_b";
 	public final static String JUMP_ANIM = "jump";
 	public final static String ATTACK_ANIM = "attack";
+	public final static String CROUCH = "crouch";
+	public final static String CROUCH_IDLE = "crouch_idle";
+
+	public boolean isInvincible() {
+		return getCurrentAnim().isInvincible();
+	}
 
 }

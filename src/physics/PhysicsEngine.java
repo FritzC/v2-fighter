@@ -8,16 +8,16 @@ import stages.Stage;
 
 public class PhysicsEngine {
 	
-	private final static float GRAVITY_ACCEL = 0.2f;
-	private final static float TERMINAL_VEL = 12;
+	private final static float GRAVITY_ACCEL = 1f;
+	private final static float TERMINAL_VEL = 20;
 
 	public static void engineTick(List<Fighter> fighters, List<GameObject> objects, Stage stage) {
 		for (Fighter f : fighters) {
 			f.advanceTick();
 		}
-		for (GameObject g : objects) {
+/*		for (GameObject g : objects) {
 			g.advanceTick();
-		}
+		}*/
 		gravity(fighters, objects);
 		collisions(fighters, objects);
 		movement(fighters, objects, stage);
@@ -25,42 +25,65 @@ public class PhysicsEngine {
 	
 	public static void movement(List<Fighter> fighters, List<GameObject> objects, Stage stage) {
 		for (Fighter f : fighters) {
+			System.out.println(f.getY());
+			if (f.getVelocity().getY() < 0 || f.getY() + 175 < stage.boundingBoxes().getBoxes().get(0).getY()) {
+				f.setGrounded(false);
+			} else if (f.getY() + 175 >= stage.boundingBoxes().getBoxes().get(0).getY()) {
+				f.setGrounded(true);
+			}
 			f.setX(f.getX() + f.getVelocity().getX());
 			f.setY(f.getY() + f.getVelocity().getY());
-			if (f.boundingBoxes().collision(stage.boundingBoxes()) != null) {
-				do {
-					f.setY((int) f.getY() - 1);
-				} while (f.boundingBoxes().collision(stage.boundingBoxes()) != null);
+			if (f.isGrounded()) {
+				f.setY(stage.boundingBoxes().getBoxes().get(0).getY() - 175);
+				System.out.println("Moved up");
 				f.setGrounded(true);
 				f.getVelocity().setX(0);
 				f.getVelocity().setY(0);
 			}
 		}
-		for (GameObject g : objects) {
+/*		for (GameObject g : objects) {
 			g.setX(g.getX() + g.getVelocity().getX());
 			g.setY(g.getY() + g.getVelocity().getY());
-			if (g.boundingBoxes().collision(stage.boundingBoxes()) != null) {
+			List<CollisionBox> boxes;
+			if (!(boxes = g.boundingBoxes().getCollisions(stage.boundingBoxes(), false)).isEmpty()) {
 				do {
 					g.setY((int) g.getY() - 1);
-				} while (g.boundingBoxes().collision(stage.boundingBoxes()) != null);
+				} while ((boxes = g.boundingBoxes().getCollisions(stage.boundingBoxes(), false)).isEmpty());
 				g.setGrounded(true);
 				g.getVelocity().setX(0);
 				g.getVelocity().setY(0);
 			}
-		}
+		}*/
 	}
 	
 	public static void collisions(List<Fighter> fighters, List<GameObject> objects) {
 		for (Fighter f : fighters) {
-			// hitboxes of fighter moves here
+			for (Fighter f2 : fighters) {
+				if (f.equals(f2)) {
+					continue;
+				}
+				List<CollisionBox> boxes = f.boundingBoxes().getCollisions(f2.boundingBoxes(), true);
+				if (!boxes.isEmpty()) {
+					System.out.println("hit by something");
+					if (!f.isInvincible()) {
+						for (CollisionBox b : boxes) {
+							if (!f.wasRecentlyHitBy(f2, b)) {
+								f.getVelocity().sum(b.getTrajectory());
+								f.addRecentlyHitBy(f2, b);
+							}
+						}
+					}
+				}
+			}
 			
-			for (GameObject g : objects) {
-				if (f.boundingBoxes().collision(g.boundingBoxes()) != null) {
+/*			for (GameObject g : objects) {
+				List<CollisionBox> boxes = f.boundingBoxes().getCollisions(g.boundingBoxes(), true);
+				if (!boxes.isEmpty()) {
 					f.collisionBehavior();
 					g.collisionBehavior();
 					break;
 				}
-			}
+			}*/
 		}
 	}
 	
@@ -73,13 +96,13 @@ public class PhysicsEngine {
 				}
 			}
 		}
-		for (GameObject g : objects) {
+/*		for (GameObject g : objects) {
 			if (!g.isGrounded()) {
 				g.getVelocity().transformY(GRAVITY_ACCEL * g.gravityMultiplier());
 				if (g.getVelocity().getY() > TERMINAL_VEL * g.gravityMultiplier()) {
 					g.getVelocity().setY(TERMINAL_VEL * g.gravityMultiplier());
 				}
 			}
-		}
+		}*/
 	}
 }

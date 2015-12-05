@@ -1,6 +1,11 @@
 package physics;
 
 import java.awt.Graphics;
+import java.awt.Shape;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Area;
+import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.List;
 
 import characters.GameObject;
@@ -37,63 +42,43 @@ public class CollisionAreas {
 	
 	public void setOwner(GameObject owner) {
 		this.owner = owner;
+		for (CollisionBox b : boxes) {
+			b.setOwner(owner);
+		}
 	}
 	
-	public CollisionBox collision(CollisionAreas b) {
-/*		for (Rectangle r : boxes) {
-			for (Rectangle r2 : b.boxes) {
-				if (r.getMinX() + offX <= r2.getMinX() + b.offX
-						&& r.getMaxX() + offX >= r2.getMinX() + b.offX
-						&& r.getMinY() + offY <= r2.getMinY() + b.offY
-						&& r.getMaxY() + offY >= r2.getMinY() + b.offY) {
-					return true;
+	public List<CollisionBox> getCollisions(CollisionAreas b, boolean hitboxes) {
+		List<CollisionBox> collisions = new ArrayList<>();
+		for (CollisionBox myBox : boxes) {
+			for (CollisionBox oBox : b.getBoxes()) {
+				if (!hitboxes) {
+					if (myBox.getDamage() != -1 && oBox.getDamage() == -1
+							|| myBox.getDamage() == -1 && oBox.getDamage() != -1) {
+						continue;
+					}
+				} else {
+					if (myBox.getDamage() == -1 && oBox.getDamage() == -1
+							|| myBox.getDamage() != -1 && oBox.getDamage() != -1) {
+						continue;
+					}
 				}
-				if (r.getMinX() + offX <= r2.getMaxX() + b.offX
-						&& r.getMaxX() + offX >= r2.getMaxX() + b.offX
-						&& r.getMinY() + offY <= r2.getMinY() + b.offY
-						&& r.getMaxY() + offY >= r2.getMinY() + b.offY) {
-					return true;
-				}
-				if (r.getMinX() + offX <= r2.getMinX() + b.offX
-						&& r.getMaxX() + offX >= r2.getMinX() + b.offX
-						&& r.getMinY() + offY <= r2.getMaxY() + b.offY
-						&& r.getMaxY() + offY >= r2.getMaxY() + b.offY) {
-					return true;
-				}
-				if (r.getMinX() + offX <= r2.getMaxX() + b.offX
-						&& r.getMaxX() + offX >= r2.getMaxX() + b.offX
-						&& r.getMinY() + offY <= r2.getMaxY() + b.offY
-						&& r.getMaxY() + offY >= r2.getMaxY() + b.offY) {
-					return true;
-				}
-				if (r2.getMinX() + b.offX <= r.getMinX() + offX
-						&& r2.getMaxX() + b.offX >= r.getMinX() + offX
-						&& r2.getMinY() + b.offY <= r.getMinY() + offY
-						&& r2.getMaxY() + b.offY >= r.getMinY() + offY) {
-					return true;
-				}
-				if (r2.getMinX() + b.offX <= r.getMaxX() + offX
-						&& r2.getMaxX() + b.offX >= r.getMaxX() + offX
-						&& r2.getMinY() + b.offY <= r.getMinY() + offY
-						&& r2.getMaxY() + b.offY >= r.getMinY() + offY) {
-					return true;
-				}
-				if (r2.getMinX() + b.offX <= r.getMinX() + offX
-						&& r2.getMaxX() + b.offX >= r.getMinX() + offX
-						&& r2.getMinY() + b.offY <= r.getMaxY() + offY
-						&& r2.getMaxY() + b.offY >= r.getMaxY() + offY) {
-					return true;
-				}
-				if (r2.getMinX() + b.offX <= r.getMaxX() + offX
-						&& r2.getMaxX() + b.offX >= r.getMaxX() + offX
-						&& r2.getMinY() + b.offY <= r.getMaxY() + offY
-						&& r2.getMaxY() + b.offY >= r.getMaxY() + offY) {
-					return true;
+				Shape myShape = new Rectangle2D.Double(myBox.getX(), myBox.getY(), myBox.getWidth(), myBox.getHeight());
+				Shape oShape = new Rectangle2D.Double(oBox.getX(), oBox.getY(), oBox.getWidth(), oBox.getHeight());
+				AffineTransform at = new AffineTransform();
+				at.rotate(Math.toRadians(myBox.getAngle()), myBox.getX(), myBox.getY());
+				myShape = at.createTransformedShape(myShape);
+				at = new AffineTransform();
+				at.rotate(Math.toRadians(oBox.getAngle()), oBox.getX(), oBox.getY());
+				oShape = at.createTransformedShape(oShape);
+				Area a = new Area(myShape);
+				Area a2 = new Area(oShape);
+				a.intersect(a2);
+				if (!a.isEmpty()) {
+					collisions.add(oBox);
 				}
 			}
-		}*/
-		
-		return null;
+		}
+		return collisions;
 	}
 	
 	public List<CollisionBox> getBoxes() {

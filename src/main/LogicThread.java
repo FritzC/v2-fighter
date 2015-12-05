@@ -30,6 +30,9 @@ public class LogicThread implements Runnable {
 		inputHandler.addPlayer(keyboard);
 		fighters = new ArrayList<>();
 		fighters.add(new Ryu(InputHandler.getPlayer(0)));
+		fighters.add(new Ryu(null));
+		fighters.get(0).setX(525);
+		fighters.get(1).setX(500);
 		objects = new ArrayList<>();
 		stage = new DefaultStage();
 		window = new Window();
@@ -39,6 +42,7 @@ public class LogicThread implements Runnable {
 	public void run() {
 		while (true) {
 			if (System.currentTimeMillis() - lastDraw >= 1000 / Window.FRAMES_PER_SECOND) {
+				//System.out.println("Game tick:" + tick);
 				lastDraw = System.currentTimeMillis();
 				InputHandler.updatePlayerInputs(tick);
 				PhysicsEngine.engineTick(fighters, objects, stage);

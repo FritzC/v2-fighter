@@ -17,6 +17,11 @@ public class Vector {
 		y += sum;
 	}
 	
+	public void sum(Vector v) {
+		x += v.getX();
+		y += v.getY();
+	}
+	
 	public float getX() {
 		return x;
 	}

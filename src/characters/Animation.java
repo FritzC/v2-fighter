@@ -162,8 +162,14 @@ public class Animation {
 	public void setRepeat(boolean selected) {
 		repeat = selected;
 	}
+	
+	public void setOwner(GameObject owner) {
+		for (AnimationStep s : steps) {
+			s.getCollisionAreas().setOwner(owner);
+		}
+	}
 
-	public static Map<String, Animation> loadAnimations(File f) {
+	public static Map<String, Animation> loadAnimations(File f, GameObject owner) {
 		String tab = "	";
 		Map<String, Animation> anims = new HashMap<>();
 		try (BufferedReader reader = Files.newBufferedReader(f.toPath(), Charset.defaultCharset())) {
@@ -255,6 +261,7 @@ public class Animation {
 						}
 					}
 					anims.put(name, new Animation(name, repeat, steps));
+					anims.get(name).setOwner(owner);
 				}
 			}
 		} catch (IOException e) {
@@ -266,5 +273,13 @@ public class Animation {
 
 	public static String stripText(String s) {
 		return s.replaceAll("	", "");
+	}
+
+	public CollisionAreas getCollisionBoxes() {
+		return steps.get(currentStep).getCollisions();
+	}
+
+	public boolean isInvincible() {
+		return steps.get(currentStep).isHitInvincible();
 	}
 }

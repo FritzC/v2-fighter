@@ -156,7 +156,7 @@ public class AnimationEditor {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					animModel.clear();
 					resetAnimVals();
-					Map<String, Animation> animMap = Animation.loadAnimations(imagePicker.getSelectedFile());
+					Map<String, Animation> animMap = Animation.loadAnimations(imagePicker.getSelectedFile(), null);
 					for (Animation a : animMap.values()) {
 						animModel.addElement(a);
 					}
@@ -273,8 +273,11 @@ public class AnimationEditor {
 				if (returnVal == JFileChooser.APPROVE_OPTION) {
 					List<CollisionBox> boxes = new ArrayList<>();
 					if (!steps.isSelectionEmpty()) {
-						boxes.addAll(anims.getSelectedValue().getSteps().get(steps.getSelectedIndex()).getCollisions()
-								.getBoxes());
+						for (CollisionBox b : getSelectedStep().getCollisions().getBoxes()) {
+							boxes.add(new CollisionBox(b.toString(), b.getColor(), b.getX(), b.getY(), b.getWidth(),
+									b.getHeight(), b.getAngle(), false, b.getDamage(), b.getHitstunFrames(),
+									b.knocksDown(), b.getTrajectory()));
+						}
 					}
 					anims.getSelectedValue().getSteps()
 							.add(new AnimationStep(new Sprite(imagePicker.getSelectedFile().getAbsolutePath()),
@@ -400,7 +403,7 @@ public class AnimationEditor {
 					if (cBoxes.isSelectionEmpty()) {
 						resetBoxVals();
 					} else {
-						selectBox(cBoxes.getSelectedValue());
+						selectBox(getSelectedBox());
 					}
 				}
 			}
@@ -536,6 +539,13 @@ public class AnimationEditor {
 		j3.add(rotation);
 		damage = new JSpinner(new SpinnerNumberModel(-1, -1, 1000, 1));
 		damage.setToolTipText("Damage hitbox does");
+		damage.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!cBoxes.isSelectionEmpty()) {
+					getSelectedBox().setDamage((int) damage.getValue());
+				}
+			}
+		});
 		j3.add(damage);
 		trajectoryX = new JSpinner(new SpinnerNumberModel(0d, -25d, 25d, 0.25d));
 		trajectoryX.setToolTipText("Trajectory (X Component)");
@@ -651,6 +661,7 @@ public class AnimationEditor {
 		boxY.setValue(50);
 		boxW.setValue(75);
 		boxH.setValue(25);
+		damage.setValue(0);
 		trajectoryX.setValue(0d);
 		trajectoryY.setValue(0d);
 		hitstun.setValue(0);
@@ -698,6 +709,7 @@ public class AnimationEditor {
 		boxY.setValue(box.getY());
 		boxW.setValue(box.getWidth());
 		boxH.setValue(box.getHeight());
+		damage.setValue(box.getDamage());
 		trajectoryX.setValue((double) box.getTrajectory().getX());
 		trajectoryY.setValue((double) box.getTrajectory().getY());
 		hitstun.setValue(box.getHitstunFrames());

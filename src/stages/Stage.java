@@ -2,9 +2,12 @@ package stages;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.util.ArrayList;
+import java.util.List;
 
 import physics.CollisionAreas;
 import physics.CollisionBox;
+import physics.Vector;
 
 public abstract class Stage {
 
@@ -19,13 +22,18 @@ public abstract class Stage {
 	
 	public void draw(Graphics g) {
 		for (Platform p : platforms) {
+			boundingBoxes().draw(0, 0, g);
 			g.fillRect(p.getX(), p.getY(), p.getWidth(), p.getHeight());
 		}
 	}
 
 	public CollisionAreas boundingBoxes() {
-		return /*new CollisionAreas(new CollisionBox("Stage", Color.GRAY, platforms[0].getX(), platforms[0].getY(), platforms[0].getWidth(),
-				platforms[0].getHeight(), 0.0f))*/null;
+		Platform p = platforms[0];
+		CollisionBox b = new CollisionBox("stage", Color.BLUE, p.getX(), p.getY(), p.getWidth(), p.getHeight(), 0,
+				false, -1, 0, false, new Vector(0, 0));
+		List<CollisionBox> b2 = new ArrayList<CollisionBox>();
+		b2.add(b);
+		return new CollisionAreas(b2);
 	}
 	
 }
