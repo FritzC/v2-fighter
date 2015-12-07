@@ -55,7 +55,8 @@ public abstract class GameObject {
 	}
 	
 	public void setVector(Vector v) {
-		vector = v;
+		vector.setX(v.getX());
+		vector.setY(v.getY());
 	}
 	
 	public abstract void collisionBehavior();

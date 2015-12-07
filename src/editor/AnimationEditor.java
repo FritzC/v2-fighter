@@ -104,6 +104,11 @@ public class AnimationEditor {
 	static JSpinner armorAmount;
 	static JSpinner hitstun;
 	static JCheckBox knockdown;
+	static JSpinner groundLocation;
+	static JCheckBox setVelocity;
+	static JSpinner velocityX;
+	static JSpinner velocityY;
+	static JCheckBox ignoresGravity;
 	
 	
 	public static void main(String args[]) {
@@ -142,6 +147,7 @@ public class AnimationEditor {
 						f = new File(f.getAbsolutePath() + ".anims");
 					}
 					saveAnimations(f);
+					frame.setTitle("Editing: " + imagePicker.getSelectedFile().getName());
 				}
 			}
 		});
@@ -164,6 +170,7 @@ public class AnimationEditor {
 						anims.setSelectedValue(animModel.getElementAt(0), true);
 						selectAnim(animModel.getElementAt(0));
 					}
+					frame.setTitle("Editing: " + imagePicker.getSelectedFile().getName());
 				}
 			}
 		});
@@ -179,7 +186,12 @@ public class AnimationEditor {
 				if (name == null) {
 					return;
 				}
-				animModel.addElement(new Animation(name, false, new ArrayList<AnimationStep>()));
+				int ground = (int) groundLocation.getValue();
+				if (!animModel.isEmpty() && animModel.getElementAt(animModel.size() - 1) != null) {
+					ground = animModel.getElementAt(animModel.size() - 1).getGroundLocation();
+				}
+				animModel.addElement(new Animation(name, repeat.isSelected(), ground,
+						new ArrayList<AnimationStep>()));
 				anims.setSelectedIndex(animModel.size() - 1);
 				selectAnim(anims.getSelectedValue());
 			}
@@ -222,6 +234,16 @@ public class AnimationEditor {
 			}
 		});
 		p.add(repeat);
+		groundLocation = new JSpinner(new SpinnerNumberModel(200, 0, 500, 1));
+		groundLocation.setToolTipText("Y Coordinate of the ground");
+		groundLocation.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!anims.isSelectionEmpty()) {
+					anims.getSelectedValue().setGroundLocation((int) groundLocation.getValue());
+				}
+			}
+		});
+		p.add(groundLocation);
 		preview = new JCheckBox("Preview");
 		preview.addActionListener(new ActionListener() {
 			boolean savedVal;
@@ -279,13 +301,17 @@ public class AnimationEditor {
 									b.knocksDown(), b.getTrajectory()));
 						}
 					}
+					Double f3 = (Double) velocityX.getValue();
+					Double f4 = (Double) velocityY.getValue();
 					anims.getSelectedValue().getSteps()
 							.add(new AnimationStep(new Sprite(imagePicker.getSelectedFile().getAbsolutePath()),
 									interuptable.isSelected(), specialCancelable.isSelected(),
 									(int) frameCount.getValue(), hitInvincible.isSelected(),
 									normalInvincible.isSelected(), grabInvincible.isSelected(),
 									projectileInvincible.isSelected(), (int) armorAmount.getValue(),
-									new CollisionAreas(boxes)));
+									ignoresGravity.isSelected(),
+									new Vector(f3.floatValue(), f4.floatValue()),
+									setVelocity.isSelected(), new CollisionAreas(boxes)));
 					stepModel.addElement(
 							anims.getSelectedValue().getSteps().get(anims.getSelectedValue().getSteps().size() - 1));
 					steps.setSelectedIndex(stepModel.size() - 1);
@@ -389,6 +415,46 @@ public class AnimationEditor {
 			}
 		});
 		p2.add(projectileInvincible);
+		ignoresGravity = new JCheckBox("Ignores Gravity");
+		ignoresGravity.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					getSelectedStep().setIgnoresGravity(ignoresGravity.isSelected());
+				}
+			}
+		});
+		p2.add(ignoresGravity);
+		setVelocity = new JCheckBox("Sets fighter velocity");
+		setVelocity.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					getSelectedStep().setSetVelocity(setVelocity.isSelected());
+				}
+			}
+		});
+		p2.add(setVelocity);
+		velocityX = new JSpinner(new SpinnerNumberModel(0d, -100d, 100d, 0.25d));
+		velocityX.setToolTipText("X Velocity");
+		velocityX.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					Double f = (Double) velocityX.getValue();
+					getSelectedStep().getVelocity().setX(f.floatValue());
+				}
+			}
+		});
+		p2.add(velocityX);
+		velocityY = new JSpinner(new SpinnerNumberModel(0d, -100d, 100d, 0.25d));
+		velocityY.setToolTipText("Y Velocity");
+		velocityY.addChangeListener(new ChangeListener() {
+			public void stateChanged(ChangeEvent e) {
+				if (!steps.isSelectionEmpty()) {
+					Double f = (Double) velocityY.getValue();
+					getSelectedStep().getVelocity().setY(f.floatValue());
+				}
+			}
+		});
+		p2.add(velocityY);
 		stepPanel.add(p2, BorderLayout.SOUTH);
 		frame.getContentPane().add(stepPanel);
 		
@@ -596,11 +662,20 @@ public class AnimationEditor {
 			public void paintComponent(Graphics g) {
 				g.setColor(Color.LIGHT_GRAY);
 				g.fillRect(0, 0, getWidth(), getHeight());
-				if (preview.isSelected() && !anims.isSelectionEmpty() && anims.getSelectedValue().getSteps().size() > 0) {
-					anims.getSelectedValue().draw(0, 0, g);
-					anims.getSelectedValue().advance();
-				} else if (!steps.isSelectionEmpty()) {
-					steps.getSelectedValue().draw(0, 0, g);
+				if (!animModel.isEmpty() && !anims.isSelectionEmpty()
+						&& !anims.getSelectedValue().getSteps().isEmpty()) {
+					if (preview.isSelected()) {
+						anims.getSelectedValue().draw(0, 0, g);
+						anims.getSelectedValue().advance();
+					} else if (!steps.isSelectionEmpty()){
+						steps.getSelectedValue().draw(0, 0, g);
+					}
+					g.setColor(new Color(50, 50, 50, 150));
+					g.fillRect(0, anims.getSelectedValue().getGroundLocation(), getWidth(),
+							1000);
+					g.setColor(new Color(50, 50, 50, 200));
+					g.drawRect(-1, anims.getSelectedValue().getGroundLocation(), getWidth(),
+							1000);
 				}
 			}
 		};
@@ -637,6 +712,7 @@ public class AnimationEditor {
 	public static void resetAnimVals() {
 		name.setText("Name");
 		repeat.setSelected(false);
+		groundLocation.setValue(200);
 		stepModel.clear();
 		resetStepVals();
 	}
@@ -650,6 +726,10 @@ public class AnimationEditor {
 		grabInvincible.setSelected(false);
 		projectileInvincible.setSelected(false);
 		armorAmount.setValue(0);
+		setVelocity.setSelected(false);
+		ignoresGravity.setSelected(false);
+		velocityX.setValue(0d);
+		velocityY.setValue(0d);
 		boxModel.clear();
 		resetBoxVals();
 	}
@@ -671,6 +751,7 @@ public class AnimationEditor {
 	public static void selectAnim(Animation anim) {
 		name.setText(anim.toString());
 		repeat.setSelected(anim.repeat());
+		groundLocation.setValue(anim.getGroundLocation());
 		
 		stepModel.clear();
 		for (AnimationStep s : anim.getSteps()) {
@@ -691,6 +772,10 @@ public class AnimationEditor {
 		grabInvincible.setSelected(step.isGrabInvincible());
 		projectileInvincible.setSelected(step.isProjectileInvincible());
 		armorAmount.setValue(step.getArmorAmount());
+		ignoresGravity.setSelected(step.isIgnoresGravity());
+		setVelocity.setSelected(step.setsVelocity());
+		velocityX.setValue((double) step.getVelocity().getX());
+		velocityY.setValue((double) step.getVelocity().getY());
 		
 		boxModel.clear();
 		for (CollisionBox c : step.getCollisions().getBoxes()) {
@@ -726,6 +811,8 @@ public class AnimationEditor {
 				writer.newLine();
 				writer.append(tab + "Repeat: " + a.repeat());
 				writer.newLine();
+				writer.append(tab + "GroundLocation: " + a.getGroundLocation());
+				writer.newLine();
 				writer.append(tab + "Steps[" + a.getSteps().size() + "] {");
 				writer.newLine();
 				for (int n = 0; n < a.getSteps().size(); n++) {
@@ -754,6 +841,12 @@ public class AnimationEditor {
 					writer.append(tab + tab + tab + "ProjectileInvincible: " + step.isProjectileInvincible());
 					writer.newLine();
 					writer.append(tab + tab + tab + "ArmorAmount: " + step.getArmorAmount());
+					writer.newLine();
+					writer.append(tab + tab + tab + "IgnoresGravity: " + step.isIgnoresGravity());
+					writer.newLine();
+					writer.append(tab + tab + tab + "Velocity: " + step.getVelocity());
+					writer.newLine();
+					writer.append(tab + tab + tab + "SetVelocity: " + step.setsVelocity());
 					writer.newLine();
 					writer.append(tab + tab + tab + "CollisionBoxes[" + step.getCollisions().getBoxes().size() + "] {");
 					writer.newLine();

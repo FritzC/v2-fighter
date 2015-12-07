@@ -25,17 +25,19 @@ public class PhysicsEngine {
 	
 	public static void movement(List<Fighter> fighters, List<GameObject> objects, Stage stage) {
 		for (Fighter f : fighters) {
-			System.out.println(f.getY());
-			if (f.getVelocity().getY() < 0 || f.getY() + 175 < stage.boundingBoxes().getBoxes().get(0).getY()) {
+			if (f.getCurrentAnim().setsVelocity()) {
+				f.setVector(f.getCurrentAnim().getVelocity());
+			}
+			if (f.getVelocity().getY() < 0) {
 				f.setGrounded(false);
-			} else if (f.getY() + 175 >= stage.boundingBoxes().getBoxes().get(0).getY()) {
-				f.setGrounded(true);
 			}
 			f.setX(f.getX() + f.getVelocity().getX());
 			f.setY(f.getY() + f.getVelocity().getY());
-			if (f.isGrounded()) {
-				f.setY(stage.boundingBoxes().getBoxes().get(0).getY() - 175);
-				System.out.println("Moved up");
+			if (f.getX() < 0) {
+				f.setX(0);
+			}
+			if (stage.collision(f.getX(), f.getY() + f.getCurrentAnim().getGroundLocation())) {
+				f.setY(stage.getY() - f.getCurrentAnim().getGroundLocation() - 1);
 				f.setGrounded(true);
 				f.getVelocity().setX(0);
 				f.getVelocity().setY(0);
@@ -64,12 +66,12 @@ public class PhysicsEngine {
 				}
 				List<CollisionBox> boxes = f.boundingBoxes().getCollisions(f2.boundingBoxes(), true);
 				if (!boxes.isEmpty()) {
-					System.out.println("hit by something");
 					if (!f.isInvincible()) {
 						for (CollisionBox b : boxes) {
 							if (!f.wasRecentlyHitBy(f2, b)) {
-								f.getVelocity().sum(b.getTrajectory());
+								f.setVector(b.getTrajectory());
 								f.addRecentlyHitBy(f2, b);
+								f2.addRecentlyHit(f);
 							}
 						}
 					}
@@ -89,7 +91,7 @@ public class PhysicsEngine {
 	
 	public static void gravity(List<Fighter> fighters, List<GameObject> objects) {
 		for (Fighter f : fighters) {
-			if (!f.isGrounded()) {
+			if (!f.isGrounded() && !f.getCurrentAnim().ignoresGravity()) {
 				f.getVelocity().transformY(GRAVITY_ACCEL * f.gravityMultiplier());
 				if (f.getVelocity().getY() > TERMINAL_VEL * f.gravityMultiplier()) {
 					f.getVelocity().setY(TERMINAL_VEL * f.gravityMultiplier());

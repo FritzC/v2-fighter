@@ -29,8 +29,8 @@ public class LogicThread implements Runnable {
 		inputHandler = new InputHandler();
 		inputHandler.addPlayer(keyboard);
 		fighters = new ArrayList<>();
-		fighters.add(new Ryu(InputHandler.getPlayer(0)));
-		fighters.add(new Ryu(null));
+		fighters.add(new Ryu(InputHandler.getPlayer(0), "Me"));
+		fighters.add(new Ryu(null, "Dummy"));
 		fighters.get(0).setX(525);
 		fighters.get(1).setX(500);
 		objects = new ArrayList<>();

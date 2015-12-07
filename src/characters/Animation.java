@@ -31,6 +31,9 @@ public class Animation {
 	 */
 	public final static int FRAMES_PER_SPRITE = 5;
 
+	/**
+	 * Name of animation
+	 */
 	private String name;
 
 	/**
@@ -58,6 +61,11 @@ public class Animation {
 	 * Whether the animation will repeat
 	 */
 	private boolean repeat;
+	
+	/**
+	 * Y coordinate of the ground in animation
+	 */
+	private int groundLocation;
 
 	/**
 	 * A character animation
@@ -67,9 +75,10 @@ public class Animation {
 	 * @param sprites
 	 *            - Array of sprites that the animation is of
 	 */
-	public Animation(String name, boolean repeat, List<AnimationStep> steps) {
+	public Animation(String name, boolean repeat, int groundLocation, List<AnimationStep> steps) {
 		this.name = name;
 		this.steps = steps;
+		this.groundLocation = groundLocation;
 		currentStep = 0;
 		speed = 1.0f;
 		if (steps.size() > 0) {
@@ -178,13 +187,19 @@ public class Animation {
 				if (lineFromFile.startsWith("Animation")) {
 					String name = lineFromFile.split("\"")[1];
 					boolean repeat = Boolean.parseBoolean(stripText(reader.readLine()).replace("Repeat: ", ""));
+					int groundLocation = 0;
+					if ((lineFromFile = reader.readLine()).contains("GroundLocation: ")) {
+						groundLocation = Integer.parseInt(stripText(lineFromFile).replace("GroundLocation: ", ""));
+					}
 					List<AnimationStep> steps = new ArrayList<>();
 					String sName = "";
 					BufferedImage image = null;
 					int framesToDisplay = FRAMES_PER_SPRITE;
 					boolean interuptable = false, specialCancelable = false, hitInvincible = false,
-							normalInvincible = false, grabInvincible = false, projectileInvincible = false;
+							normalInvincible = false, grabInvincible = false, projectileInvincible = false,
+							setVelocity = false, ignoresGravity = false;
 					int armorAmount = 0;
+					Vector velocity = new Vector(0, 0);
 					List<CollisionBox> boxes = new ArrayList<>();
 					while (!(lineFromFile = reader.readLine()).equals(tab + "}")) {
 						if (lineFromFile.contains("[Step ")) {
@@ -216,6 +231,14 @@ public class Animation {
 						} else if (lineFromFile.contains("ArmorAmount: ")) {
 							armorAmount = Integer
 									.parseInt(stripText(lineFromFile).replace("ArmorAmount: ", ""));
+						} else if (lineFromFile.contains("IgnoresGravity: ")) {
+							ignoresGravity = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("IgnoresGravity: ", ""));
+						} else if (lineFromFile.contains("SetVelocity: ")) {
+							setVelocity = Boolean
+									.parseBoolean(stripText(lineFromFile).replace("SetVelocity: ", ""));
+						} else if (lineFromFile.contains("Velocity: ")) {
+							velocity = Vector.parseVector(stripText(lineFromFile).replace("Velocity: ", ""));
 						} else if (lineFromFile.contains("CollisionBoxes")) {
 							String bName = "";
 							Color c = Color.YELLOW;
@@ -255,12 +278,13 @@ public class Animation {
 						}
 						if (lineFromFile.equals(tab + tab + "}")) {
 							steps.add(new AnimationStep(new Sprite(image, sName), interuptable, specialCancelable,
-									framesToDisplay, hitInvincible, normalInvincible, grabInvincible, projectileInvincible,
-									armorAmount, new CollisionAreas(new ArrayList<CollisionBox>(boxes))));
+									framesToDisplay, hitInvincible, normalInvincible, grabInvincible,
+									projectileInvincible, armorAmount, ignoresGravity, velocity, setVelocity,
+									new CollisionAreas(new ArrayList<CollisionBox>(boxes))));
 							boxes.clear();
 						}
 					}
-					anims.put(name, new Animation(name, repeat, steps));
+					anims.put(name, new Animation(name, repeat, groundLocation, steps));
 					anims.get(name).setOwner(owner);
 				}
 			}
@@ -281,5 +305,25 @@ public class Animation {
 
 	public boolean isInvincible() {
 		return steps.get(currentStep).isHitInvincible();
+	}
+
+	public int getGroundLocation() {
+		return groundLocation;
+	}
+
+	public void setGroundLocation(int groundLocation) {
+		this.groundLocation = groundLocation;
+	}
+
+	public boolean ignoresGravity() {
+		return steps.get(currentStep).isIgnoresGravity();
+	}
+
+	public boolean setsVelocity() {
+		return steps.get(currentStep).setsVelocity();
+	}
+
+	public Vector getVelocity() {
+		return steps.get(currentStep).getVelocity();
 	}
 }

@@ -10,8 +10,8 @@ public class Ryu extends Fighter {
 	
 	CollisionAreas b;
 
-	public Ryu(PlayerInputs inputs) {
-		super(inputs, "./sprites/characters/ryu");
+	public Ryu(PlayerInputs inputs, String player) {
+		super(inputs, player);
 		anims = Animation.loadAnimations(new File("ryu.anims"), this);
 		setAnim(IDLE_ANIM);
 	}
@@ -20,7 +20,6 @@ public class Ryu extends Fighter {
 	public void handleInputs() {
 		if (getInputs() != null && getInputs().getPreviousInputs(1).getInputs().contains(Input.ATTACK)) {
 			setAnim("shuryuken");
-			getVelocity().setY(-10);
 		}
 	}
 	

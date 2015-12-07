@@ -16,42 +16,22 @@ import physics.CollisionAreas;
 public abstract class Fighter extends GameObject {
 
 	protected Animation currentAnim;
-	private String imagesLocation;
 	private PlayerInputs inputs;
 
 	protected Map<String, Animation> anims;
 	protected Map<Integer, Sprite> sprites;
+	
+	public String player;
 
-	public Fighter(PlayerInputs inputs, String imagesLocation) {
+	public Fighter(PlayerInputs inputs, String player) {
 		this.inputs = inputs;
-		this.imagesLocation = imagesLocation;
+		this.player = player;
 		sprites = new HashMap<>();
-		loadImages();
 		anims = new HashMap<>();
-	}
-
-	private void loadImages() {
-		File dir = new File(imagesLocation);
-		if (!dir.isDirectory()) {
-			Main.errorMsg("Invalid location specified for fighter sprites (" + dir.getAbsolutePath() + ")");
-			return;
-		}
-		File[] images = dir.listFiles();
-		for (File f : images) {
-			if (f.getName().endsWith(".png")) {
-				int id = Integer.parseInt(f.getName().replace(".png", ""));
-				Sprite s = new Sprite(f.getAbsolutePath());
-				sprites.put(id, s);
-			}
-		}
 	}
 
 	public Animation getCurrentAnim() {
 		return currentAnim;
-	}
-
-	protected String getImageLocations() {
-		return imagesLocation;
 	}
 
 	public void draw(Graphics g) {
@@ -78,10 +58,8 @@ public abstract class Fighter extends GameObject {
 			}
 			if (getInputs().getPreviousInputs(1).getInputs().contains(Input.LEFT)) {
 				setAnim(WALK_F_ANIM);
-				getVelocity().setX(-1);
 			} else if (getInputs().getPreviousInputs(1).getInputs().contains(Input.RIGHT)) {
 				setAnim(WALK_B_ANIM);
-				getVelocity().setX(1);
 			} else if (getInputs().getPreviousInputs(1).getInputs().isEmpty()) {
 				setAnim(IDLE_ANIM);
 				getVelocity().setX(0);
@@ -102,6 +80,7 @@ public abstract class Fighter extends GameObject {
 		defaultInputs();
 		handleInputs();
 		if (getCurrentAnim().isFinished()) {
+			resetOthersHitByLists();
 			currentAnim = anims.get(IDLE_ANIM);
 		}
 		getCurrentAnim().advance();

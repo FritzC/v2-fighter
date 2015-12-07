@@ -5,6 +5,7 @@ import java.awt.Graphics;
 import display.Sprite;
 import main.Main;
 import physics.CollisionAreas;
+import physics.Vector;
 
 public class AnimationStep {
 	
@@ -52,6 +53,21 @@ public class AnimationStep {
 	 * Number of hits of armor that the animation has this step
 	 */
 	private int armorAmount;
+	
+	/**
+	 * Whether gravity is ignored for this step
+	 */
+	private boolean ignoresGravity;
+	
+	/**
+	 * Velocity of character during this step
+	 */
+	private Vector velocity;
+	
+	/**
+	 * Whether or not this step sets player velocity
+	 */
+	private boolean setVelocity;
 
 	/**
 	 * Hitboxes for this step
@@ -59,8 +75,8 @@ public class AnimationStep {
 	private CollisionAreas collisionAreas;
 
 	public AnimationStep(Sprite sprite, boolean interuptable, boolean specialInteruptable, int framesToDisplay,
-			boolean hitInvincible, boolean normalInvincible, boolean grabInvincible, boolean projectileInvincible, int armorAmount,
-			CollisionAreas areas) {
+			boolean hitInvincible, boolean normalInvincible, boolean grabInvincible, boolean projectileInvincible,
+			int armorAmount, boolean ignoresGravity, Vector velocity, boolean setVelocity, CollisionAreas areas) {
 		this.sprite = sprite;
 		this.interuptable = interuptable;
 		this.specialInteruptable = specialInteruptable;
@@ -71,14 +87,9 @@ public class AnimationStep {
 		this.collisionAreas = areas;
 		this.normalInvincible = normalInvincible;
 		this.armorAmount = armorAmount;
-	}
-
-	public boolean isNormalInvincible() {
-		return normalInvincible;
-	}
-
-	public void setNormalInvincible(boolean normalInvincible) {
-		this.normalInvincible = normalInvincible;
+		this.velocity = velocity;
+		this.setVelocity = setVelocity;
+		this.ignoresGravity = ignoresGravity;
 	}
 
 	/**
@@ -176,6 +187,38 @@ public class AnimationStep {
 
 	public void setCollisionAreas(CollisionAreas collisionAreas) {
 		this.collisionAreas = collisionAreas;
+	}
+
+	public void setVelocity(Vector velocity) {
+		this.velocity = velocity;
+	}
+	
+	public boolean setsVelocity() {
+		return setVelocity;
+	}
+
+	public void setSetVelocity(boolean setVelocity) {
+		this.setVelocity = setVelocity;
+	}
+
+	public Vector getVelocity() {
+		return velocity;
+	}
+
+	public boolean isNormalInvincible() {
+		return normalInvincible;
+	}
+
+	public void setNormalInvincible(boolean normalInvincible) {
+		this.normalInvincible = normalInvincible;
+	}
+
+	public boolean isIgnoresGravity() {
+		return ignoresGravity;
+	}
+
+	public void setIgnoresGravity(boolean ignoresGravity) {
+		this.ignoresGravity = ignoresGravity;
 	}
 
 }

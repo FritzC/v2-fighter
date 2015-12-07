@@ -1,5 +1,7 @@
 package stages;
 
+import java.awt.Rectangle;
+
 public class Platform {
 	
 	private int x, y, height, width;
@@ -25,5 +27,9 @@ public class Platform {
 	
 	public int getHeight() {
 		return height;
+	}
+
+	public boolean contains(float f, float g) {
+		return new Rectangle(x, y, width, height).contains(f, g);
 	}
 }

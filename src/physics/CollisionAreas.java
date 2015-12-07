@@ -57,8 +57,7 @@ public class CollisionAreas {
 						continue;
 					}
 				} else {
-					if (myBox.getDamage() == -1 && oBox.getDamage() == -1
-							|| myBox.getDamage() != -1 && oBox.getDamage() != -1) {
+					if (myBox.getDamage() != -1 || oBox.getDamage() == -1) {
 						continue;
 					}
 				}

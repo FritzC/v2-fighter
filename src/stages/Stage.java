@@ -22,18 +22,21 @@ public abstract class Stage {
 	
 	public void draw(Graphics g) {
 		for (Platform p : platforms) {
-			boundingBoxes().draw(0, 0, g);
 			g.fillRect(p.getX(), p.getY(), p.getWidth(), p.getHeight());
 		}
 	}
 
-	public CollisionAreas boundingBoxes() {
-		Platform p = platforms[0];
-		CollisionBox b = new CollisionBox("stage", Color.BLUE, p.getX(), p.getY(), p.getWidth(), p.getHeight(), 0,
-				false, -1, 0, false, new Vector(0, 0));
-		List<CollisionBox> b2 = new ArrayList<CollisionBox>();
-		b2.add(b);
-		return new CollisionAreas(b2);
+	public boolean collision(float f, float g) {
+		for (Platform p : platforms) {
+			if (p.contains(f, g)) {
+				return true;
+			}
+		}
+		return false;
+	}
+	
+	public int getY() {
+		return platforms[0].getY();
 	}
 	
 }
