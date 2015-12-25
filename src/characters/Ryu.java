@@ -28,4 +28,8 @@ public class Ryu extends Fighter {
 		return 1.0f;
 	}
 
+	@Override
+	public int getMaxHitpoints() {
+		return 100;
+	}
 }

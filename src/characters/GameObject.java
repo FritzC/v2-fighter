@@ -12,6 +12,9 @@ import physics.Vector;
 
 public abstract class GameObject {
 	
+	private int hitpoints;
+	private int maxHitpoints;
+	
 	private boolean grounded = false;
 	private Vector vector = new Vector(0, 0);
 	private float x, y;
@@ -22,6 +25,7 @@ public abstract class GameObject {
 	public GameObject() {
 		recentlyHitBy = new HashMap<>();
 		recentlyHit = new ArrayList<>();
+		maxHitpoints = hitpoints = getMaxHitpoints();
 	}
 
 	public abstract void draw(Graphics g);
@@ -40,6 +44,34 @@ public abstract class GameObject {
 	
 	public float getY() {
 		return y;
+	}
+	
+	public int getHitpoints() {
+		return hitpoints;
+	}
+	
+	public int getMaxHitpoints() {
+		return maxHitpoints;
+	}
+	
+	public void modifyHitpoints(int change) {
+		hitpoints += change;
+		if (hitpoints > maxHitpoints) {
+			hitpoints = maxHitpoints;
+		} else if (hitpoints < 0) {
+			hitpoints = 0;
+		}
+	}
+	
+	public void setMaxHitpoints(int hitpoints) {
+		maxHitpoints = this.hitpoints = hitpoints;
+	}
+	
+	public float getHitpoiintPercent() {
+		if (maxHitpoints > 0) {
+			return hitpoints / (float) maxHitpoints;
+		}
+		return 0;
 	}
 	
 	public void setX(float x) {

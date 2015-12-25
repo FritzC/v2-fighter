@@ -72,6 +72,7 @@ public class PhysicsEngine {
 								f.setVector(b.getTrajectory());
 								f.addRecentlyHitBy(f2, b);
 								f2.addRecentlyHit(f);
+								f.modifyHitpoints(-b.getDamage());
 							}
 						}
 					}

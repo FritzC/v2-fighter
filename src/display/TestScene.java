@@ -37,6 +37,12 @@ public class TestScene extends Scene {
 		for (GameObject g2 : LogicThread.objects) {
 			g2.draw(g);
 		}
+		g.setColor(Color.RED);
+		g.fillRect(10, 10, 200, 30);
+		g.fillRect(10, 50, 200, 30);
+		g.setColor(Color.GREEN);
+		g.fillRect(10, 10, (int) (200 * LogicThread.fighters.get(0).getHitpoiintPercent()), 30);
+		g.fillRect(10, 50, (int) (200 * LogicThread.fighters.get(1).getHitpoiintPercent()), 30);
 		g.setColor(Color.BLACK);
 		g.drawString(mouseLoc.toString(), 10, 20);
 	}
