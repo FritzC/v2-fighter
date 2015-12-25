@@ -1,0 +1,12 @@
+Hitbox types:
+ - High
+ - Mid
+ - Low
+ - Unblockable
+ - Hurtbox
+ 
+Hitbox trigger animation
+
+When blocking you take half the damage in gray health instead
+ - Slowly regenerates until you get hit
+ - Can't die to gray health
