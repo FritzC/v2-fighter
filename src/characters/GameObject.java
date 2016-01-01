@@ -12,6 +12,9 @@ import physics.Vector;
 
 public abstract class GameObject {
 	
+	private boolean flipped = true;
+	protected Animation currentAnim;
+	
 	private int hitpoints;
 	private int maxHitpoints;
 	
@@ -132,6 +135,18 @@ public abstract class GameObject {
 	
 	public void resetHitByList(GameObject o) {
 		recentlyHitBy.remove(o);
+	}
+
+	public boolean isFlipped() {
+		return flipped;
+	}
+
+	public void setFlipped(boolean flipped) {
+		this.flipped = flipped;
+	}
+	
+	public int getWidth() {
+		return currentAnim.getWidth();
 	}
 	
 }

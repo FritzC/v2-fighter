@@ -47,4 +47,6 @@ public abstract class Scene extends JPanel {
 		drawables.remove(d);
 	}
 	
+	public abstract void tick();
+	
 }

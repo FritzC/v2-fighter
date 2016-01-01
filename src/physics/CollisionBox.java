@@ -36,15 +36,26 @@ public class CollisionBox {
 		this.knockdown = knockdown;
 	}
 	
-	public void draw(int offX, int offY, Graphics g) {
+	public void draw(int offX, int offY, Graphics g, boolean flipped, int flipWidth) {
+		int xLoc = offX + x;
+		float degrees;
 		 Graphics2D g2d = (Graphics2D) g;
-		 Rectangle r = new Rectangle(offX + x, offY + y, width, height);
-		 g2d.rotate(Math.toRadians(angle), offX + x, offY + y);
+		 Rectangle r;
+		 if (flipped) {
+			 xLoc -= (x + width / 2 - flipWidth / 2) * 2 - width;
+			 degrees = -angle + 90;
+			 r = new Rectangle(xLoc, offY + y, height, width);
+		 } else {
+			 degrees = angle;
+			 r = new Rectangle(xLoc, offY + y, width, height);
+		 }
+		 g2d.rotate(Math.toRadians(degrees), xLoc, offY + y);
 		 g2d.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 200));
 		 g2d.draw(r);
 		 g2d.setColor(new Color(color.getRed(), color.getGreen(), color.getBlue(), 100));
 		 g2d.fill(r);
-		 g2d.rotate(Math.toRadians(-angle), offX + x, offY + y);
+		 g2d.setColor(Color.BLACK);
+		 g2d.rotate(Math.toRadians(-degrees), xLoc, offY + y);
 	}
 	
 	public Color getColor() {
@@ -97,7 +108,10 @@ public class CollisionBox {
 		return damage;
 	}
 	
-	public Vector getTrajectory() {
+	public Vector getTrajectory(boolean flipped) {
+		if (flipped) {
+			return new Vector(-trajectory.getX(), trajectory.getY());
+		}
 		return trajectory;
 	}
 	

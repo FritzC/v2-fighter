@@ -115,9 +115,9 @@ public class Animation {
 	 * @param g
 	 *            - Graphic object to draw with
 	 */
-	public void draw(int x, int y, Graphics g) {
+	public void draw(int x, int y, Graphics g, boolean flipped) {
 		try {
-			steps.get(currentStep).draw(x, y, g);
+			steps.get(currentStep).draw(x, y, g, flipped);
 		} catch (Exception e) {
 			Main.errorMsg("Error drawing frame: " + currentStep + " of " + (steps.size() - 1));
 			// e.printStackTrace();
@@ -325,5 +325,9 @@ public class Animation {
 
 	public Vector getVelocity() {
 		return steps.get(currentStep).getVelocity();
+	}
+	
+	public int getWidth() {
+		return steps.get(currentStep).getSprite().getImage().getWidth();
 	}
 }

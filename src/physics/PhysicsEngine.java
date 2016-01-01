@@ -10,8 +10,15 @@ public class PhysicsEngine {
 	
 	private final static float GRAVITY_ACCEL = 1f;
 	private final static float TERMINAL_VEL = 20;
+	private final static int HIT_FREEZE = 7;
+	
+	private int hitFreeze = 0;
 
-	public static void engineTick(List<Fighter> fighters, List<GameObject> objects, Stage stage) {
+	public void engineTick(List<Fighter> fighters, List<GameObject> objects, Stage stage) {
+		if (hitFreeze > 0) {
+			hitFreeze--;
+			return;
+		}
 		for (Fighter f : fighters) {
 			f.advanceTick();
 		}
@@ -23,7 +30,7 @@ public class PhysicsEngine {
 		movement(fighters, objects, stage);
 	}
 	
-	public static void movement(List<Fighter> fighters, List<GameObject> objects, Stage stage) {
+	public void movement(List<Fighter> fighters, List<GameObject> objects, Stage stage) {
 		for (Fighter f : fighters) {
 			if (f.getCurrentAnim().setsVelocity()) {
 				f.setVector(f.getCurrentAnim().getVelocity());
@@ -58,7 +65,7 @@ public class PhysicsEngine {
 		}*/
 	}
 	
-	public static void collisions(List<Fighter> fighters, List<GameObject> objects) {
+	public void collisions(List<Fighter> fighters, List<GameObject> objects) {
 		for (Fighter f : fighters) {
 			for (Fighter f2 : fighters) {
 				if (f.equals(f2)) {
@@ -69,10 +76,11 @@ public class PhysicsEngine {
 					if (!f.isInvincible()) {
 						for (CollisionBox b : boxes) {
 							if (!f.wasRecentlyHitBy(f2, b)) {
-								f.setVector(b.getTrajectory());
+								f.setVector(b.getTrajectory(f2.isFlipped()));
 								f.addRecentlyHitBy(f2, b);
 								f2.addRecentlyHit(f);
 								f.modifyHitpoints(-b.getDamage());
+								hitFreeze = HIT_FREEZE;
 							}
 						}
 					}
@@ -90,7 +98,7 @@ public class PhysicsEngine {
 		}
 	}
 	
-	public static void gravity(List<Fighter> fighters, List<GameObject> objects) {
+	public void gravity(List<Fighter> fighters, List<GameObject> objects) {
 		for (Fighter f : fighters) {
 			if (!f.isGrounded() && !f.getCurrentAnim().ignoresGravity()) {
 				f.getVelocity().transformY(GRAVITY_ACCEL * f.gravityMultiplier());

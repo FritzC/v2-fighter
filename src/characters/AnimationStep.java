@@ -97,11 +97,12 @@ public class AnimationStep {
 	 * @param x - X location to draw step
 	 * @param y - Y location to draw step
 	 * @param g = Graphics to use to draw step
+	 * @param flipped - If the step is flipped
 	 */
-	public void draw(int x, int y, Graphics g) {
-		sprite.draw(x, y, g);
+	public void draw(int x, int y, Graphics g, boolean flipped) {
+		sprite.draw(x, y, g, flipped);
 		if (Main.DEBUG) {
-			collisionAreas.draw(x, y, g);
+			collisionAreas.draw(x, y, g, flipped, sprite.getImage().getWidth());
 		}
 	}
 	

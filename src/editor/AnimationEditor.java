@@ -298,7 +298,7 @@ public class AnimationEditor {
 						for (CollisionBox b : getSelectedStep().getCollisions().getBoxes()) {
 							boxes.add(new CollisionBox(b.toString(), b.getColor(), b.getX(), b.getY(), b.getWidth(),
 									b.getHeight(), b.getAngle(), false, b.getDamage(), b.getHitstunFrames(),
-									b.knocksDown(), b.getTrajectory()));
+									b.knocksDown(), b.getTrajectory(false)));
 						}
 					}
 					Double f3 = (Double) velocityX.getValue();
@@ -619,7 +619,7 @@ public class AnimationEditor {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
 					Double f = (Double) trajectoryX.getValue();
-					getSelectedBox().getTrajectory().setX(f.floatValue()); 
+					getSelectedBox().getTrajectory(false).setX(f.floatValue()); 
 				}
 			}
 		});
@@ -630,7 +630,7 @@ public class AnimationEditor {
 			public void stateChanged(ChangeEvent e) {
 				if (!cBoxes.isSelectionEmpty()) {
 					Double f = (Double) trajectoryY.getValue();
-					getSelectedBox().getTrajectory().setY(f.floatValue()); 
+					getSelectedBox().getTrajectory(false).setY(f.floatValue()); 
 				}
 			}
 		});
@@ -665,10 +665,10 @@ public class AnimationEditor {
 				if (!animModel.isEmpty() && !anims.isSelectionEmpty()
 						&& !anims.getSelectedValue().getSteps().isEmpty()) {
 					if (preview.isSelected()) {
-						anims.getSelectedValue().draw(0, 0, g);
+						anims.getSelectedValue().draw(0, 0, g, false);
 						anims.getSelectedValue().advance();
 					} else if (!steps.isSelectionEmpty()){
-						steps.getSelectedValue().draw(0, 0, g);
+						steps.getSelectedValue().draw(0, 0, g, false);
 					}
 					g.setColor(new Color(50, 50, 50, 150));
 					g.fillRect(0, anims.getSelectedValue().getGroundLocation(), getWidth(),
@@ -795,8 +795,8 @@ public class AnimationEditor {
 		boxW.setValue(box.getWidth());
 		boxH.setValue(box.getHeight());
 		damage.setValue(box.getDamage());
-		trajectoryX.setValue((double) box.getTrajectory().getX());
-		trajectoryY.setValue((double) box.getTrajectory().getY());
+		trajectoryX.setValue((double) box.getTrajectory(false).getX());
+		trajectoryY.setValue((double) box.getTrajectory(false).getY());
 		hitstun.setValue(box.getHitstunFrames());
 		knockdown.setSelected(box.knocksDown());
 	}
@@ -872,7 +872,7 @@ public class AnimationEditor {
 						writer.newLine();
 						writer.append(tab + tab + tab + tab + tab + "Knockdown: " + box.knocksDown());
 						writer.newLine();
-						writer.append(tab + tab + tab + tab + tab + "Trajectory: " + box.getTrajectory());
+						writer.append(tab + tab + tab + tab + tab + "Trajectory: " + box.getTrajectory(false));
 						writer.newLine();
 						writer.append(tab + tab + tab + tab + "}");
 						writer.newLine();

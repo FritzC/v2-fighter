@@ -1,21 +1,17 @@
 package characters;
 
 import java.awt.Graphics;
-import java.io.File;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import display.Sprite;
 import inputs.Input;
 import inputs.PlayerInputs;
-import main.Main;
 import physics.CollisionAreas;
+import physics.Vector;
 
 public abstract class Fighter extends GameObject {
 
-	protected Animation currentAnim;
 	private PlayerInputs inputs;
 
 	protected Map<String, Animation> anims;
@@ -35,7 +31,7 @@ public abstract class Fighter extends GameObject {
 	}
 
 	public void draw(Graphics g) {
-		getCurrentAnim().draw((int) getX(), (int) getY(), g);
+		getCurrentAnim().draw((int) getX(), (int) getY(), g, isFlipped());
 	}
 
 	public boolean needsRemoval() {
@@ -51,15 +47,19 @@ public abstract class Fighter extends GameObject {
 
 	}
 
-	public void defaultInputs() {
+	public void handleDefaultInputs() {
 		if (getInputs() != null) {
 			if (!getCurrentAnim().canAct()) {
 				return;
 			}
-			if (getInputs().getPreviousInputs(1).getInputs().contains(Input.LEFT)) {
+			if (getInputs().getPreviousInputs(1).getInputs().contains(Input.UP) && isGrounded()) {
+				setVector(new Vector(0, -20));
+			} else if (getInputs().getPreviousInputs(1).getInputs().contains(Input.LEFT)) {
 				setAnim(WALK_F_ANIM);
+				setFlipped(false);
 			} else if (getInputs().getPreviousInputs(1).getInputs().contains(Input.RIGHT)) {
 				setAnim(WALK_B_ANIM);
+				setFlipped(true);
 			} else if (getInputs().getPreviousInputs(1).getInputs().isEmpty()) {
 				setAnim(IDLE_ANIM);
 				getVelocity().setX(0);
@@ -77,7 +77,7 @@ public abstract class Fighter extends GameObject {
 	}
 
 	public void advanceTick() {
-		defaultInputs();
+		handleDefaultInputs();
 		handleInputs();
 		if (getCurrentAnim().isFinished()) {
 			resetOthersHitByLists();
